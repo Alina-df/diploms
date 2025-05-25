@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "342743766144",
+    "project_id": "dorm-5a999",
+    "storage_bucket": "dorm-5a999.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342743766144:android:739f801c1684f0a1834265",
+        "android_client_info": {
+          "package_name": "com.example.alinadiplom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZDgD1DzclcO5y0FJhpER2WW1GscVKU7I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
