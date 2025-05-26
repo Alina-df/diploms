@@ -84,7 +84,7 @@ public class FragmentAdminRequests extends Fragment {
     }
 
     private void setupAdapter() {
-        adapter = new AdminRequestsAdapter(new AdminRequestsAdapter.OnActionListener() {
+        adapter = new AdminRequestsAdapter(list, new AdminRequestsAdapter.OnActionListener() {
             @Override
             public void onApprove(AdminRequest req) {
                 approveRequest(req);

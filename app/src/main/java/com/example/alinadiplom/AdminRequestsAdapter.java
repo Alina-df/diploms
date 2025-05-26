@@ -24,7 +24,7 @@ public class AdminRequestsAdapter extends RecyclerView.Adapter<AdminRequestsAdap
     private List<AdminRequest> requests = new ArrayList<>();
     private final OnActionListener listener;
 
-    public AdminRequestsAdapter(OnActionListener listener) {
+    public AdminRequestsAdapter(List<AdminRequest> list, OnActionListener listener) {
         this.listener = listener;
     }
 
