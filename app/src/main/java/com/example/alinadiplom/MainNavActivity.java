@@ -2,13 +2,12 @@ package com.example.alinadiplom;
 
 import android.os.Bundle;
 import android.view.MenuItem;
-
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
 import androidx.navigation.ui.NavigationUI;
@@ -22,7 +21,7 @@ import com.google.firebase.database.ValueEventListener;
 
 public class MainNavActivity extends AppCompatActivity {
 
-private ActivityMainNavBinding binding;
+    private ActivityMainNavBinding binding;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,8 +33,8 @@ private ActivityMainNavBinding binding;
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.navigation_home,
                 R.id.navigation_dashboard,
-                R.id.navigation_notifications,
-                R.id.navigation_admin_requests  // добавили сюда
+                R.id.navigation_profile,
+                R.id.navigation_admin_requests
         ).build();
 
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
@@ -43,25 +42,35 @@ private ActivityMainNavBinding binding;
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(navView, navController);
 
-        // Спрячем пункт до проверки
-        MenuItem adminItem = navView.getMenu()
-                .findItem(R.id.navigation_admin_requests);
+        // Скрываем пункт меню для администратора
+        MenuItem adminItem = navView.getMenu().findItem(R.id.navigation_admin_requests);
         adminItem.setVisible(false);
 
-        // Проверяем — только админам показываем
-        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        DatabaseReference adminRef = FirebaseDatabase.getInstance()
-                .getReference("admins").child(uid);
-        adminRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        // Проверка авторизации
+        String uid = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : null;
+        if (uid == null) {
+            Toast.makeText(this, "Пользователь не авторизован", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Проверка роли администратора через users/<uid>/role
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snap) {
-                if (snap.exists()) {
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String role = snapshot.getValue(String.class);
+                if ("admin".equals(role)) {
                     adminItem.setVisible(true);
                 }
             }
-            @Override public void onCancelled(@NonNull DatabaseError e) { }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(MainNavActivity.this, "Ошибка проверки прав: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
     }
-
-
 }

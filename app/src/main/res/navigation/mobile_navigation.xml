@@ -17,15 +17,27 @@
         android:label="@string/title_dashboard"
         tools:layout="@layout/fragment_dashboard" />
 
+    <!-- Заменяем Notifications на Profile -->
     <fragment
-        android:id="@+id/navigation_notifications"
-        android:name="com.example.alinadiplom.ui.notifications.NotificationsFragment"
-        android:label="@string/title_notifications"
-        tools:layout="@layout/fragment_notifications" />
+        android:id="@+id/navigation_profile"
+        android:name="com.example.alinadiplom.ui.profile.ProfileFragment"
+        android:label="Профиль"
+        tools:layout="@layout/fragment_notifications">
+        <action
+            android:id="@+id/action_profile_to_settings"
+            app:destination="@id/settingsFragment" />
+    </fragment>
+
+    <!-- Настройки -->
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.example.alinadiplom.ui.settings.SettingsFragment"
+        android:label="Настройки"
+        tools:layout="@layout/fragment_settings"/>
 
     <fragment
         android:id="@+id/navigation_admin_requests"
-        android:name="com.example.alinadiplom.fragment_admin_requests"
+        android:name="com.example.alinadiplom.FragmentAdminRequests"
         android:label="@string/title_admin_requests"
         tools:layout="@layout/fragment_admin_requests" />
 

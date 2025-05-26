@@ -30,27 +30,11 @@
         app:layout_constraintTop_toTopOf="parent" />
 
 
-    <ImageButton
-        android:id="@+id/addNoticeButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="43dp"
-        android:layout_marginBottom="8dp"
-        android:background="@android:color/transparent"
-        android:contentDescription="Добавить объявление"
-        android:src="@android:drawable/ic_input_add"
-        app:layout_constraintBottom_toTopOf="@+id/switchTabs"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.957"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/eventsRecyclerView"
-        app:layout_constraintVertical_bias="0.0" />
-
     <LinearLayout
         android:id="@+id/switchTabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
+        android:layout_marginTop="24dp"
         android:gravity="center"
         android:orientation="horizontal"
         android:padding="8dp"
@@ -67,7 +51,7 @@
             android:gravity="center"
             android:text="Объявления"
             android:textColor="@color/blue"
-            android:textSize="14sp" />
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/tabNotices2"
@@ -76,7 +60,15 @@
             android:layout_weight="1"
             android:gravity="center"
             android:textColor="@color/blue"
-            android:textSize="18sp" />
+            android:textSize="12sp" />
+
+        <ImageButton
+            android:id="@+id/addNoticeButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:contentDescription="Добавить объявление"
+            android:src="@android:drawable/ic_input_add" />
 
         <TextView
             android:id="@+id/tabNotices3"

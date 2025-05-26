@@ -6,8 +6,6 @@ public class AdminRequest {
     public String number;
     public long timestamp;
 
-    public AdminRequest() { /* для Firebase */ }
-
     public AdminRequest(String uid, String fio, String number, long timestamp) {
         this.uid = uid;
         this.fio = fio;

@@ -6,18 +6,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".AddNoticeActivity">
+
     <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <EditText
             android:id="@+id/noticeTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Заголовок" />
+            android:hint="Заголовок"
+            android:inputType="text" />
 
         <EditText
             android:id="@+id/noticeBody"
@@ -25,12 +29,29 @@
             android:layout_height="wrap_content"
             android:hint="Описание"
             android:inputType="textMultiLine"
-            android:minLines="5" />
+            android:minLines="5"
+            android:layout_marginTop="8dp" />
+
+        <EditText
+            android:id="@+id/noticeTags"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Хештеги (например: #таро #нумерология)"
+            android:inputType="text"
+            android:layout_marginTop="8dp" />
+
+        <CheckBox
+            android:id="@+id/adminNoticeCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Опубликовать как администратор"
+            android:layout_marginTop="8dp" />
 
         <Button
             android:id="@+id/saveNoticeBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Сохранить" />
+            android:text="Сохранить"
+            android:layout_marginTop="16dp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

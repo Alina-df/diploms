@@ -26,7 +26,7 @@
         android:layout_marginStart="20dp"
         android:layout_marginTop="120dp"
         android:layout_marginEnd="20dp"
-        android:text="Button"
+        android:text="Вход"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
@@ -38,7 +38,7 @@
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="230dp"
-        android:text="Button"
+        android:text="Регистрация"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

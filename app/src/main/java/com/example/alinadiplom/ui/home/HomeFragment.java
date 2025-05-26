@@ -2,11 +2,13 @@ package com.example.alinadiplom.ui.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
@@ -16,11 +18,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.alinadiplom.AddNoticeActivity;
 import com.example.alinadiplom.Event;
 import com.example.alinadiplom.EventAdapter;
-import com.example.alinadiplom.Load_activity;
+import com.example.alinadiplom.Notice;
 import com.example.alinadiplom.NotificationAdapter;
-import com.example.alinadiplom.NotificationItem;
 import com.example.alinadiplom.PeopleAdapter;
-import com.example.alinadiplom.PersonItem;
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.databinding.FragmentHomeBinding;
 import com.google.firebase.auth.FirebaseAuth;
@@ -34,11 +34,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HomeFragment extends Fragment {
-
+    private static final String TAG = "HomeFragment";
     private FragmentHomeBinding binding;
     private NotificationAdapter notificationAdapter;
     private PeopleAdapter peopleAdapter;
     private RecyclerView recyclerView;
+    private List<Notice> adminNotices = new ArrayList<>();
+    private List<Notice> peopleNotices = new ArrayList<>();
+    private ValueEventListener noticesListener;
+    private boolean isAdmin = false;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -52,35 +56,58 @@ public class HomeFragment extends Fragment {
         recyclerView = root.findViewById(R.id.notificationRecycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Данные для вкладки "Объявления"
-        loadNotificationsFromFirebase();
+        // Check admin status
+        String uid = FirebaseAuth.getInstance().getCurrentUser() != null ?
+                FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+        if (uid != null) {
+            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
+            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    String role = snapshot.getValue(String.class);
+                    isAdmin = "admin".equals(role);
+                    Log.d(TAG, "User is admin: " + isAdmin);
+                    // Reinitialize adapters with admin status
+                    notificationAdapter = new NotificationAdapter(adminNotices, isAdmin);
+                    peopleAdapter = new PeopleAdapter(peopleNotices, isAdmin);
+                    // Update RecyclerView based on active tab
+                    if (binding.tabNotices.getCurrentTextColor() == getResources().getColor(R.color.blue)) {
+                        recyclerView.setAdapter(notificationAdapter);
+                    } else {
+                        recyclerView.setAdapter(peopleAdapter);
+                    }
+                }
 
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Toast.makeText(getContext(), "Ошибка проверки прав: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Admin check error: " + error.getMessage());
+                }
+            });
+        }
 
-        // Данные для вкладки "Люди"
-        List<PersonItem> peopleList = new ArrayList<>();
-        peopleList.add(new PersonItem("1502 комната", "Кузнецова Екатерина", "Привет! Я делаю расклады...", "#таро #нумерология", R.drawable.ic_avatar_placeholder));
-        peopleList.add(new PersonItem("1603 комната", "Петров Семён", "Помогаю с мат. анализом...", "#программирование #матан", R.drawable.ic_avatar_placeholder));
-        peopleAdapter = new PeopleAdapter(peopleList);
+        // Initialize adapters (default, will be updated after admin check)
+        notificationAdapter = new NotificationAdapter(adminNotices, isAdmin);
+        peopleAdapter = new PeopleAdapter(peopleNotices, isAdmin);
+        recyclerView.setAdapter(notificationAdapter);
 
-        recyclerView.setAdapter(notificationAdapter); // По умолчанию
-
-        // Переключатели вкладок
+        // Tab switchers
         binding.tabNotices.setOnClickListener(v -> {
             binding.tabNotices.setTextColor(getResources().getColor(R.color.blue));
             binding.tabPeople.setTextColor(getResources().getColor(R.color.gray));
             recyclerView.setAdapter(notificationAdapter);
+            Log.d(TAG, "Switched to Объявления tab, admin notices: " + adminNotices.size());
         });
 
         binding.tabPeople.setOnClickListener(v -> {
             binding.tabNotices.setTextColor(getResources().getColor(R.color.gray));
             binding.tabPeople.setTextColor(getResources().getColor(R.color.blue));
             recyclerView.setAdapter(peopleAdapter);
+            Log.d(TAG, "Switched to Люди tab, people notices: " + peopleNotices.size());
         });
 
-
-
+        // Events RecyclerView
         RecyclerView eventsRecyclerView = root.findViewById(R.id.eventsRecyclerView);
-
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
         eventsRecyclerView.setLayoutManager(layoutManager);
 
@@ -92,50 +119,97 @@ public class HomeFragment extends Fragment {
 
         EventAdapter adapter = new EventAdapter(getContext(), eventList);
         eventsRecyclerView.setAdapter(adapter);
+
+        // Add notice button
         ImageButton addNoticeBtn = root.findViewById(R.id.addNoticeButton);
         addNoticeBtn.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), AddNoticeActivity.class);
             startActivity(intent);
         });
 
+        // Load notices
+        loadNoticesFromFirebase();
+
         return root;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadNoticesFromFirebase();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        if (noticesListener != null) {
+            FirebaseDatabase.getInstance().getReference("notices").removeEventListener(noticesListener);
+        }
         binding = null;
     }
-    @Override
-    public void onResume() {
-        super.onResume();
-        loadNotificationsFromFirebase();
-    }
 
-    private void loadNotificationsFromFirebase() {
+    private void loadNoticesFromFirebase() {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("notices");
-        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+        if (noticesListener != null) {
+            ref.removeEventListener(noticesListener);
+        }
+        noticesListener = ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List<NotificationItem> list = new ArrayList<>();
+                adminNotices.clear();
+                peopleNotices.clear();
+
                 for (DataSnapshot ds : snapshot.getChildren()) {
-                    String date = ds.child("date").getValue(String.class);
-                    String title = ds.child("title").getValue(String.class);
-                    String body = ds.child("body").getValue(String.class); // 'message' → 'body'
+                    try {
+                        Notice notice = new Notice();
+                        notice.id = ds.child("id").getValue(String.class);
+                        notice.title = ds.child("title").getValue(String.class);
+                        notice.body = ds.child("body").getValue(String.class);
+                        notice.date = ds.child("date").getValue(String.class);
+                        Boolean isAdmin = ds.child("isAdmin").getValue(Boolean.class);
+                        notice.isAdmin = isAdmin != null && isAdmin;
+                        notice.userId = ds.child("userId").getValue(String.class);
+                        notice.userName = ds.child("userName").getValue(String.class);
+                        notice.room = ds.child("room").getValue(String.class);
+                        notice.tags = ds.child("tags").getValue(String.class);
+                        notice.avatarResId = R.drawable.ic_avatar_placeholder;
 
-                    list.add(new NotificationItem(date, title, body));
+                        Log.d(TAG, "Loaded notice: id=" + notice.id + ", isAdmin=" + notice.isAdmin +
+                                ", userName=" + notice.userName + ", room=" + notice.room);
+
+                        if (notice.isAdmin) {
+                            adminNotices.add(notice);
+                        } else {
+                            if (notice.userName != null && notice.body != null) {
+                                peopleNotices.add(notice);
+                            } else {
+                                Log.w(TAG, "Skipping invalid individual notice: id=" + notice.id);
+                            }
+                        }
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error parsing notice: " + ds.getKey() + ", error: " + e.getMessage());
+                    }
                 }
-                notificationAdapter = new NotificationAdapter(list);
 
-                // Если активна вкладка "Объявления" — отобразить новые данные
-                if (binding.tabNotices.getCurrentTextColor() == getResources().getColor(R.color.blue)) {
-                    recyclerView.setAdapter(notificationAdapter);
+                Log.d(TAG, "Admin notices: " + adminNotices.size() + ", People notices: " + peopleNotices.size());
+                notificationAdapter.notifyDataSetChanged();
+                peopleAdapter.notifyDataSetChanged();
+
+                if (binding != null) {
+                    if (binding.tabNotices.getCurrentTextColor() == getResources().getColor(R.color.blue)) {
+                        recyclerView.setAdapter(notificationAdapter);
+                    } else {
+                        recyclerView.setAdapter(peopleAdapter);
+                    }
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Можно показать Toast
+                if (getContext() != null) {
+                    Toast.makeText(getContext(), "Ошибка загрузки объявлений: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                }
+                Log.e(TAG, "Firebase error: " + error.getMessage());
             }
         });
     }
