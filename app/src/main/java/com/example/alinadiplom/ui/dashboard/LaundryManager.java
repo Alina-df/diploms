@@ -1,6 +1,8 @@
 package com.example.alinadiplom.ui.dashboard;
 
 import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
 import android.os.CountDownTimer;
 import android.widget.Toast;
 
@@ -75,6 +77,24 @@ public class LaundryManager {
      * и локальный CountDownTimer, по окончании которого сбрасывает статус.
      */
     // Метод в LaundryManager
+    private void startForegroundService(long startTime, long durationMs) {
+        Intent intent = new Intent(context, LaundryTimerService.class);
+        intent.putExtra(LaundryTimerService.EXTRA_START_TIME, startTime);
+        intent.putExtra(LaundryTimerService.EXTRA_DURATION, durationMs);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent);
+        } else {
+            context.startService(intent);
+        }
+    }
+
+    private void stopForegroundService() {
+        Intent intent = new Intent(context, LaundryTimerService.class);
+        context.stopService(intent);
+    }
+
+    // В startWashing вызови после обновления Firebase:
     public void startWashing(String userId, int minutes) {
         cancelWashTimer();
         long startTime = System.currentTimeMillis();
@@ -90,13 +110,16 @@ public class LaundryManager {
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(context,
                             "Стирка запущена на " + minutes + " мин", Toast.LENGTH_SHORT).show();
-                    startWashTimer(durationMs);
+                    startForegroundService(startTime, durationMs);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(context,
                                 "Ошибка запуска стирки: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
+
+    // В release нужно остановить сервис:
+
 
 
     /** Локальный таймер: по окончании сбрасывает статус и уведомляет */
@@ -123,6 +146,8 @@ public class LaundryManager {
     /** Сброс статуса: status → available, userId=null, startTime=null, duration=null */
     public void release() {
         cancelWashTimer();
+        stopForegroundService();
+
         Map<String, Object> data = new HashMap<>();
         data.put("status", "available");
         data.put("userId", null);

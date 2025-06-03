@@ -84,7 +84,14 @@
                 android:hint="Минуты"
                 android:inputType="number"
                 android:visibility="gone"/>
-
+            <TextView
+                android:id="@+id/laundryTimer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:padding="8dp"
+                />
             <Button
                 android:id="@+id/buttonOccupy"
                 android:layout_width="match_parent"
