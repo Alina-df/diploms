@@ -25,34 +25,36 @@ import com.google.firebase.database.ValueEventListener;
 public class ProfileFragment extends Fragment {
 
     private TextView tvFio, tvUniversity, tvFaculty, tvDorm, tvRoom;
-    private Button btnSettings;
+    private Button btnSettings, btnDormInfo, btnAdminRequest;
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
     private FragmentNotificationsBinding binding; // Исправлено на правильный binding
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        // Используем правильный ViewModel (предполагаем, что ProfilesViewModel не существует)
         ProfileViewModel profileViewModel = new ViewModelProvider(this).get(ProfileViewModel.class);
 
-        // Используем правильный binding для fragment_profile.xml
         binding = FragmentNotificationsBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // Инициализация виджетов
-        tvFio = binding.tvFio; // Используем binding для доступа к виджетам
+        tvFio = binding.tvFio;
         tvUniversity = binding.tvUniversity;
         tvFaculty = binding.tvFaculty;
         tvDorm = binding.tvDorm;
         tvRoom = binding.tvRoom;
         btnSettings = binding.btnSettings;
+        btnDormInfo = binding.btnDormInfo;
+        btnAdminRequest = binding.btnAdminRequest;
 
-        // Инициализация Firebase
         mAuth = FirebaseAuth.getInstance();
         mDatabase = FirebaseDatabase.getInstance().getReference();
 
-        // Загрузка данных пользователя
         String uid = mAuth.getCurrentUser().getUid();
+
+        // Изначально скрываем кнопку
+        btnAdminRequest.setVisibility(View.GONE);
+
+        // Загружаем данные пользователя и проверяем роль
         mDatabase.child("Users").child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -68,6 +70,14 @@ public class ProfileFragment extends Fragment {
                     tvFaculty.setText(faculty != null ? faculty : "Не указано");
                     tvDorm.setText(dorm != null ? dorm : "Не указано");
                     tvRoom.setText(room != null ? room : "Не указано");
+
+                    // Проверяем роль и показываем кнопку если admin
+                    String role = snapshot.child("role").getValue(String.class);
+                    if ("admin".equals(role)) {
+                        btnAdminRequest.setVisibility(View.VISIBLE);
+                    } else {
+                        btnAdminRequest.setVisibility(View.GONE);
+                    }
                 }
             }
 
@@ -77,13 +87,19 @@ public class ProfileFragment extends Fragment {
             }
         });
 
-        // Переход на SettingsFragment
         btnSettings.setOnClickListener(v -> {
             NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_settings);
+        });
+        btnDormInfo.setOnClickListener(v -> {
+            NavHostFragment.findNavController(this).navigate(R.id.action_navigation_profile_to_DormInfoFragment);
+        });
+        btnAdminRequest.setOnClickListener(v -> {
+            NavHostFragment.findNavController(this).navigate(R.id.action_navigation_profile_to_navigation_admin_requests); // если у тебя есть фрагмент для запросов админа
         });
 
         return root;
     }
+
 
     @Override
     public void onDestroyView() {

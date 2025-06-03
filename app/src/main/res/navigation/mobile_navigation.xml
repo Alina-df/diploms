@@ -31,6 +31,12 @@
         <action
             android:id="@+id/action_profile_to_settings"
             app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/action_navigation_profile_to_DormInfoFragment"
+            app:destination="@id/DormInfoFragment" />
+        <action
+            android:id="@+id/action_navigation_profile_to_navigation_admin_requests"
+            app:destination="@id/navigation_admin_requests" />
     </fragment>
 
     <!-- Настройки -->
@@ -59,5 +65,10 @@
         android:name="com.example.alinadiplom.ChatListFragment"
         android:label="@string/title_admin_requests"
         tools:layout="@layout/fragment_chat_list" />
+    <fragment
+        android:id="@+id/DormInfoFragment"
+        android:name="com.example.alinadiplom.ui.profile.DormInfoFragment"
+        android:label="@string/title_admin_requests"
+        tools:layout="@layout/fragment_dorm_info" />
 
 </navigation>

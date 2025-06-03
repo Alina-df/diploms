@@ -1,5 +1,7 @@
 package com.example.alinadiplom;
 
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -7,6 +9,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -20,7 +25,27 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 public class MainNavActivity extends AppCompatActivity {
+    private static final int STORAGE_PERMISSION_CODE = 100;
 
+    private void requestStoragePermission() {
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    STORAGE_PERMISSION_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == STORAGE_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Разрешение на хранение необходимо для сохранения PDF", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
     private ActivityMainNavBinding binding;
 
     @Override
@@ -28,21 +53,20 @@ public class MainNavActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainNavBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestStoragePermission();
+        }
         BottomNavigationView navView = binding.navView;
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.navigation_home,
                 R.id.navigation_dashboard,
-                R.id.navigation_profile,
-                R.id.navigation_admin_requests
+                R.id.navigation_profile
         ).build();
 
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment_activity_main_nav);
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(navView, navController);
-        MenuItem adminItem = navView.getMenu().findItem(R.id.navigation_admin_requests);
-        adminItem.setVisible(false);
         String uid = FirebaseAuth.getInstance().getCurrentUser() != null
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid()
                 : null;
@@ -51,20 +75,21 @@ public class MainNavActivity extends AppCompatActivity {
             finish();
             return;
         }
-        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
-        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String role = snapshot.getValue(String.class);
-                if ("admin".equals(role)) {
-                    adminItem.setVisible(true);
-                }
-            }
+        navView.setOnItemSelectedListener(item -> {
+            getSupportFragmentManager().popBackStackImmediate(null, 0);
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MainNavActivity.this, "Ошибка проверки прав: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
+            return NavigationUI.onNavDestinationSelected(item, navController);
         });
+
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
+
+    }
+    @Override
+    public void onBackPressed() {
+        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+            getSupportFragmentManager().popBackStack();
+        } else {
+            super.onBackPressed();
+        }
     }
 }

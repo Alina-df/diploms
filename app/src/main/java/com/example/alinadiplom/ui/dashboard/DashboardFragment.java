@@ -3,232 +3,249 @@
 package com.example.alinadiplom.ui.dashboard;
 
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.databinding.FragmentDashboardBinding;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-
 public class DashboardFragment extends Fragment {
+
     private FragmentDashboardBinding binding;
-    private FirebaseAuth mAuth;
-    private DatabaseReference userNotifRef;
-    private ValueEventListener notifListener;
-    private NotificationHelper notificationHelper;
     private LaundryManager laundryManager;
+    private RoomDataManager roomDataManager;
+    private FirebaseAuth mAuth;
     private String myUid;
+    private ValueEventListener laundryListener;
+
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
-                             ViewGroup container, Bundle savedInstanceState) {
-        DashboardViewModel dashboardViewModel =
-                new ViewModelProvider(this).get(DashboardViewModel.class);
+                             ViewGroup container,
+                             Bundle savedInstanceState) {
         binding = FragmentDashboardBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
+
+        // 1. Авторизация
         mAuth = FirebaseAuth.getInstance();
-        myUid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+        myUid = mAuth.getCurrentUser() != null
+                ? mAuth.getCurrentUser().getUid()
+                : null;
         if (myUid == null) {
             Toast.makeText(getContext(), "Пользователь не авторизован", Toast.LENGTH_SHORT).show();
             return root;
         }
-        notificationHelper = new NotificationHelper(requireContext());
-        laundryManager = new LaundryManager(
-                requireContext(),
-                "washer1",
-                binding.progressBar,
-                notificationHelper
-        );
-        subscribeToIncomingNotifications();
+
+        // 2. RoomDataManager: загрузка комнаты и соседей
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users");
+        DatabaseReference roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
+        roomDataManager = new RoomDataManager(usersRef, roomsRef);
         loadRoomData();
-        checkLaundryStatus();
+
+        // 3. LaundryManager: управление стиральной машиной
+        laundryManager = new LaundryManager(requireContext());
+        attachLaundryListener();
+
+        // Обработчики кнопок прачечной
         binding.buttonOccupy.setOnClickListener(v -> {
-            laundryManager.updateLaundryStatus(myUid);
-            binding.groupView.setVisibility(View.GONE);
-            binding.laundryView.setVisibility(View.VISIBLE);
+            binding.editMinutes.setVisibility(View.VISIBLE);
+            binding.buttonStartWash.setVisibility(View.VISIBLE);
+            binding.buttonOccupy.setVisibility(View.GONE);
+            binding.buttonReserve.setVisibility(View.GONE);
+            binding.buttonCancelReserve.setVisibility(View.GONE);
+            binding.laundryQueueInfo.setText("");
         });
-        binding.buttonBackExpanded.setOnClickListener(v -> {
-            laundryManager.stopTimer();
-            binding.groupView.setVisibility(View.VISIBLE);
-            binding.laundryView.setVisibility(View.GONE);
-            binding.progressBar.setProgress(0);
-        });
+
         binding.buttonStartWash.setOnClickListener(v -> {
-            String timerInput = binding.editTimer.getText().toString().trim();
-            if (timerInput.isEmpty()) {
-                Toast.makeText(getContext(), "Введите время стирки (минут)", Toast.LENGTH_SHORT).show();
+            String minutesStr = binding.editMinutes.getText().toString().trim();
+            if (TextUtils.isEmpty(minutesStr)) {
+                Toast.makeText(getContext(), "Введите количество минут", Toast.LENGTH_SHORT).show();
                 return;
             }
-            int minutes = Integer.parseInt(timerInput);
-            long durationMs = minutes * 60L * 1000L;
-            laundryManager.setNotificationEnabled(binding.checkNotify.isChecked());
-            laundryManager.startWashing(myUid, durationMs, () -> {
-                Toast.makeText(getContext(), "Стирка запущена", Toast.LENGTH_SHORT).show();
-            });
+            int minutes = Integer.parseInt(minutesStr);
+            if (minutes <= 0) {
+                Toast.makeText(getContext(), "Минуты должны быть > 0", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            laundryManager.startWashing(myUid, minutes);
+            binding.editMinutes.setText("");
+            binding.editMinutes.setVisibility(View.GONE);
+            binding.buttonStartWash.setVisibility(View.GONE);
         });
-        binding.buttonReserve.setOnClickListener(v -> {
-            laundryManager.reserveLaundry(myUid);
-        });
-        binding.btnAddNote.setOnClickListener(v -> addNote());
+
+        binding.buttonReserve.setOnClickListener(v ->
+                laundryManager.reserve(myUid)
+        );
+        binding.buttonCancelReserve.setOnClickListener(v ->
+                laundryManager.cancelReservation(myUid)
+        );
+
+        // 4. Обработка отправки запроса на услугу
+        binding.buttonSendService.setOnClickListener(v -> sendServiceRequest());
 
         return root;
     }
-    private void loadRoomData() {
-        // TODO: Здесь вы можете вызвать RoomDataManager, если он у вас есть
-        // В этом примере оставим как есть – код из вашего старого метода loadRoomData().
-    }
-    private void subscribeToIncomingNotifications() {
-        DatabaseReference root = FirebaseDatabase.getInstance().getReference();
-        userNotifRef = root.child("users").child(myUid).child("laundryNotifications");
 
-        notifListener = userNotifRef.addValueEventListener(new ValueEventListener() {
-            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (!snapshot.exists()) return;
-                for (DataSnapshot ds : snapshot.getChildren()) {
-                    String message = ds.child("message").getValue(String.class);
-                    if (message != null) {
-                        Toast.makeText(getContext(),
-                                "Прачечная: " + message,
-                                Toast.LENGTH_LONG).show();
+    /** Загрузка номера комнаты и соседей из RoomDataManager */
+    private void loadRoomData() {
+        roomDataManager.loadUserRoom(myUid, new RoomDataManager.RoomCallback() {
+            @Override
+            public void onRoomLoaded(String dorm, String room) {
+                binding.roomNumber.setText(room);
+                roomDataManager.loadRoommates(dorm, room, new RoomDataManager.RoommatesCallback() {
+                    @Override
+                    public void onRoommatesLoaded(Map<String, String> roommates) {
+                        binding.roommatesContainer.removeAllViews();
+                        for (Map.Entry<String, String> entry : roommates.entrySet()) {
+                            TextView tv = new TextView(getContext());
+                            tv.setText(entry.getValue());
+                            tv.setTextSize(14);
+                            tv.setPadding(8, 4, 8, 4);
+                            binding.roommatesContainer.addView(tv);
+                        }
                     }
-                    ds.getRef().removeValue();
-                }
+
+                    @Override
+                    public void onError(String errorMessage) {
+                        Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
+                        TextView tv = new TextView(getContext());
+                        tv.setText("Соседи не найдены");
+                        tv.setTextSize(14);
+                        tv.setPadding(8, 4, 8, 4);
+                        binding.roommatesContainer.addView(tv);
+                    }
+                });
             }
-            @Override public void onCancelled(@NonNull DatabaseError error) { /**/ }
+
+            @Override
+            public void onError(String errorMessage) {
+                Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
+            }
         });
     }
-    private void checkLaundryStatus() {
-        DatabaseReference laundryRef = FirebaseDatabase.getInstance()
-                .getReference("laundry")
-                .child("washer1");
-        ValueEventListener laundryListener = laundryRef.addValueEventListener(new ValueEventListener() {
-            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (binding == null) return;
+
+    /** Подписка на изменения в /laundry для обновления UI */
+    private void attachLaundryListener() {
+        laundryListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String status = snapshot.child("status").getValue(String.class);
                 String occupiedBy = snapshot.child("userId").getValue(String.class);
-                Long startTime = snapshot.child("startTime").getValue(Long.class);
-                Long duration = snapshot.child("duration").getValue(Long.class);
+
+                DataSnapshot reservationsNode = snapshot.child("reservations");
+
                 if (status == null || status.equals("available")) {
-                    // Если свободна:
-                    binding.laundryTitle.setText("Стиралка №1 ○");
-                    binding.laundryExpandedTitle.setText("Стиралка №1 ○");
+                    binding.laundryStatus.setText("○ Свободна");
                     binding.buttonOccupy.setVisibility(View.VISIBLE);
                     binding.buttonReserve.setVisibility(View.GONE);
-                    laundryManager.stopTimer();
-                    binding.progressBar.setProgress(0);
-                    laundryManager.notifyNextInQueue();
+                    binding.buttonCancelReserve.setVisibility(View.GONE);
+                    binding.buttonStartWash.setVisibility(View.GONE);
+                    binding.editMinutes.setVisibility(View.GONE);
+                    binding.laundryQueueInfo.setText("");
+
                 } else {
-                    binding.buttonOccupy.setVisibility(View.GONE);
-                    binding.buttonReserve.setVisibility(View.VISIBLE);
                     if (occupiedBy != null && occupiedBy.equals(myUid)) {
-                        if (startTime != null && duration != null) {
-                            long elapsed = System.currentTimeMillis() - startTime;
-                            long remaining = duration - elapsed;
-                            if (remaining > 0) {
-                                binding.groupView.setVisibility(View.GONE);
-                                binding.laundryView.setVisibility(View.VISIBLE);
-                                laundryManager.setNotificationEnabled(binding.checkNotify.isChecked());
-                                laundryManager.startWashing(myUid, remaining, null);
-                            } else {
-                                // Уже просрочено – сбрасываем
-                                laundryManager.resetLaundry();
+                        // Занята мной
+                        binding.laundryStatus.setText("● Занята вами");
+                        binding.buttonOccupy.setVisibility(View.GONE);
+                        binding.buttonReserve.setVisibility(View.GONE);
+                        binding.buttonCancelReserve.setVisibility(View.GONE);
+                        binding.buttonStartWash.setVisibility(View.GONE);
+                        binding.editMinutes.setVisibility(View.GONE);
+                        binding.laundryQueueInfo.setText("");
+
+                    } else {
+                        // Занята другим
+                        binding.laundryStatus.setText("● Занята");
+                        binding.buttonOccupy.setVisibility(View.GONE);
+
+                        boolean inQueue = false;
+                        if (reservationsNode.exists()) {
+                            for (DataSnapshot child : reservationsNode.getChildren()) {
+                                String uid = child.child("userId").getValue(String.class);
+                                if (myUid.equals(uid)) {
+                                    inQueue = true;
+                                    break;
+                                }
                             }
                         }
-                    } else {
-                        // Если занята другим – просто показываем “занята” без таймера
-                        binding.laundryTitle.setText("Стиралка №1 ● (Занята)");
-                        binding.laundryExpandedTitle.setText("Стиралка №1 ● (Занята)");
+                        if (inQueue) {
+                            binding.buttonReserve.setVisibility(View.GONE);
+                            binding.buttonCancelReserve.setVisibility(View.VISIBLE);
+                            binding.laundryQueueInfo.setText("Вы в очереди");
+                        } else {
+                            binding.buttonReserve.setVisibility(View.VISIBLE);
+                            binding.buttonCancelReserve.setVisibility(View.GONE);
+                            binding.laundryQueueInfo.setText("");
+                        }
+                        binding.buttonStartWash.setVisibility(View.GONE);
+                        binding.editMinutes.setVisibility(View.GONE);
                     }
                 }
             }
-            @Override public void onCancelled(@NonNull DatabaseError error) { /**/ }
-        });
-        binding.getRoot().setTag(R.id.laundry_listener_tag, laundryListener);
-    }
-    private void addNote() {
-        EditText input = new EditText(getContext());
-        input.setHint("Введите заметку");
 
-        new android.app.AlertDialog.Builder(getContext())
-                .setTitle("Новая заметка")
-                .setView(input)
-                .setPositiveButton("Добавить", (dialog, which) -> {
-                    String noteText = input.getText().toString().trim();
-                    if (!noteText.isEmpty()) {
-                        addNoteToUI(noteText);
-                        saveNoteToFirebase(noteText);
-                    } else {
-                        Toast.makeText(getContext(),
-                                "Заметка не может быть пустой", Toast.LENGTH_SHORT).show();
-                    }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
+        };
+        laundryManager.addStatusListener(laundryListener);
+    }
+
+    /** Отправка запроса на услугу в /serviceRequests */
+    private void sendServiceRequest() {
+        String room = binding.editRoom.getText().toString().trim();
+        String problem = binding.editProblem.getText().toString().trim();
+
+        if (TextUtils.isEmpty(room)) {
+            Toast.makeText(getContext(), "Укажите номер комнаты", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (TextUtils.isEmpty(problem)) {
+            Toast.makeText(getContext(), "Опишите проблему", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        long timestamp = System.currentTimeMillis();
+        DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("serviceRequests")
+                .push();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("userId", myUid);
+        data.put("room", room);
+        data.put("problem", problem);
+        data.put("timestamp", timestamp);
+
+        ref.setValue(data)
+                .addOnSuccessListener(aVoid -> {
+                    binding.serviceInfo.setText("Запрос отправлен");
+                    binding.editRoom.setText("");
+                    binding.editProblem.setText("");
                 })
-                .setNegativeButton("Отмена", null)
-                .show();
-    }
-    private void addNoteToUI(String noteText) {
-        if (binding == null) return;
-        TextView noteView = new TextView(getContext());
-        noteView.setText(noteText);
-        noteView.setTextSize(14);
-        noteView.setPadding(8, 8, 8, 8);
-        noteView.setBackgroundResource(android.R.drawable.list_selector_background);
-        binding.tasksContainer.addView(noteView);
-    }
-
-    private void saveNoteToFirebase(String noteText) {
-        String uid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
-        if (uid == null) return;
-        Map<String, Object> noteData = new HashMap<>();
-        noteData.put("text", noteText);
-        noteData.put("timestamp", System.currentTimeMillis());
-        FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(uid)
-                .child("notes")
-                .push()
-                .setValue(noteData)
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(getContext(),
-                                "Заметка сохранена", Toast.LENGTH_SHORT).show()
-                )
                 .addOnFailureListener(e ->
                         Toast.makeText(getContext(),
-                                "Ошибка сохранения заметки: " + e.getMessage(),
+                                "Ошибка отправки: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show()
                 );
     }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        if (notifListener != null && userNotifRef != null) {
-            userNotifRef.removeEventListener(notifListener);
-            notifListener = null;
-        }
-        ValueEventListener laundryListener = (ValueEventListener) binding.getRoot()
-                .getTag(R.id.laundry_listener_tag);
         if (laundryListener != null) {
-            FirebaseDatabase.getInstance()
-                    .getReference("laundry")
-                    .child("washer1")
-                    .removeEventListener(laundryListener);
+            laundryManager.removeStatusListener(laundryListener);
         }
         laundryManager.cleanup();
+        roomDataManager.cleanup();
         binding = null;
     }
 }

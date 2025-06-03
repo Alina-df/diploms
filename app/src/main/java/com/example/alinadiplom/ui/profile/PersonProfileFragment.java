@@ -54,6 +54,7 @@ public class PersonProfileFragment extends Fragment {
         ImageButton btnBack = view.findViewById(R.id.button_back);
         ImageButton btnDelete = view.findViewById(R.id.button_delete);
 
+
         btnBack.setOnClickListener(v -> Navigation.findNavController(v).popBackStack());
 
         Bundle args = getArguments();

@@ -1,107 +1,128 @@
-// Файл: app/src/main/java/com/example/alinadiplom/ui/dashboard/LaundryManager.java
-
 package com.example.alinadiplom.ui.dashboard;
 
 import android.content.Context;
-import android.widget.ProgressBar;
+import android.os.CountDownTimer;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-import android.os.CountDownTimer;
 
 /**
- * Класс, инкапсулирующий логику работы стиральной машины:
- * - смена статуса (available/occupied) в Firebase,
- * - запуск таймера CountDownTimer,
- * - управление очередью и уведомления.
+ * Логика для одной стиралки:
+ * - status: available / occupied
+ * - userId: UID текущего пользователя или null
+ * - startTime: время начала стирки (ms) или null
+ * - duration: длительность стирки в ms или null
+ * - /reservations: очередь { pushId: { userId, timestamp } }
  */
 public class LaundryManager {
 
     private final Context context;
     private final DatabaseReference laundryRef;
-    private final String laundryId;
-    private final ProgressBar progressBar;
-    private final NotificationHelper notificationHelper;
+    private CountDownTimer washTimer;
 
-    private CountDownTimer timer;
-    private boolean isNotificationEnabled = false;
-
-    public LaundryManager(Context context,
-                          String laundryId,
-                          ProgressBar progressBar,
-                          NotificationHelper notificationHelper) {
+    public LaundryManager(Context context) {
         this.context = context.getApplicationContext();
-        this.laundryId = laundryId;
-        this.progressBar = progressBar;
-        this.notificationHelper = notificationHelper;
         this.laundryRef = FirebaseDatabase.getInstance()
-                .getReference("laundry")
-                .child(laundryId);
+                .getReference("laundry");
+        initIfNeeded();
     }
 
-    /**
-     * Сразу “занять” машинку (обновляет только статус и userId).
-     */
-    public void updateLaundryStatus(String userId) {
+    /** Если узел /laundry пустой, задаём статус=available, userId=null */
+    private void initIfNeeded() {
+        laundryRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!snapshot.exists()) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("status", "available");
+                    data.put("userId", null);
+                    data.put("startTime", null);
+                    data.put("duration", null);
+                    laundryRef.updateChildren(data);
+                }
+            }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
+        });
+    }
+
+    /** Занять стиралку: status=occupied, userId=currentUserId, без таймера */
+    public void occupy(String userId) {
+        cancelWashTimer();
         Map<String, Object> data = new HashMap<>();
         data.put("status", "occupied");
         data.put("userId", userId);
+        data.put("startTime", null);
+        data.put("duration", null);
+        laundryRef.child("reservations").removeValue(); // сбросить очередь
         laundryRef.updateChildren(data)
                 .addOnSuccessListener(aVoid ->
                         Toast.makeText(context,
-                                "Стиралка занята",
-                                Toast.LENGTH_SHORT).show()
+                                "Стиралка занята", Toast.LENGTH_SHORT).show()
                 )
                 .addOnFailureListener(e ->
                         Toast.makeText(context,
-                                "Не удалось занять стиралку: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show()
+                                "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
 
     /**
-     * Запуск стирки с таймером.
-     * После успеха сохраняем startTime и duration → запускаем CountDownTimer.
-     *
-     * @param userId     UID текущего пользователя.
-     * @param durationMs Длительность стирки в миллисекундах.
-     * @param onStarted  Runnable, который будет вызван сразу после успешного обновления статуса.
+     * Запустить стирку с таймером.
+     * Устанавливает status, userId, startTime и duration в Firebase,
+     * и локальный CountDownTimer, по окончании которого сбрасывает статус.
      */
-    public void startWashing(String userId, long durationMs, Runnable onStarted) {
+    // Метод в LaundryManager
+    public void startWashing(String userId, int minutes) {
+        cancelWashTimer();
         long startTime = System.currentTimeMillis();
+        long durationMs = minutes * 60L * 1000L;
+
         Map<String, Object> data = new HashMap<>();
         data.put("status", "occupied");
         data.put("userId", userId);
         data.put("startTime", startTime);
         data.put("duration", durationMs);
-
+        laundryRef.child("reservations").removeValue(); // сброс очереди
         laundryRef.updateChildren(data)
                 .addOnSuccessListener(aVoid -> {
-                    if (onStarted != null) onStarted.run();
-                    startTimer(durationMs);
+                    Toast.makeText(context,
+                            "Стирка запущена на " + minutes + " мин", Toast.LENGTH_SHORT).show();
+                    startWashTimer(durationMs);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(context,
-                                "Ошибка запуска стирки: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show()
+                                "Ошибка запуска стирки: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
 
-    /**
-     * Сбрасывает статус машинки в “available”.
-     */
-    void resetLaundry() {
+
+    /** Локальный таймер: по окончании сбрасывает статус и уведомляет */
+    private void startWashTimer(long durationMs) {
+        washTimer = new CountDownTimer(durationMs, 1000) {
+            @Override public void onTick(long millisUntilFinished) {
+                // Здесь при желании можно обновлять прогресс в UI
+            }
+            @Override public void onFinish() {
+                release();
+                Toast.makeText(context,
+                        "Стирка завершена", Toast.LENGTH_SHORT).show();
+            }
+        }.start();
+    }
+
+    private void cancelWashTimer() {
+        if (washTimer != null) {
+            washTimer.cancel();
+            washTimer = null;
+        }
+    }
+
+    /** Сброс статуса: status → available, userId=null, startTime=null, duration=null */
+    public void release() {
+        cancelWashTimer();
         Map<String, Object> data = new HashMap<>();
         data.put("status", "available");
         data.put("userId", null);
@@ -110,11 +131,14 @@ public class LaundryManager {
         laundryRef.updateChildren(data);
     }
 
-    /**
-     * Добавляет текущего пользователя в очередь.
-     */
-    public void reserveLaundry(String userId) {
-        laundryRef.child("reservations").push().setValue(userId)
+    /** Добавить в очередь: /reservations/{pushId} = { userId, timestamp } */
+    public void reserve(String userId) {
+        long now = System.currentTimeMillis();
+        DatabaseReference pushRef = laundryRef.child("reservations").push();
+        Map<String, Object> value = new HashMap<>();
+        value.put("userId", userId);
+        value.put("timestamp", now);
+        pushRef.setValue(value)
                 .addOnSuccessListener(aVoid ->
                         Toast.makeText(context,
                                 "Вы добавлены в очередь", Toast.LENGTH_SHORT).show()
@@ -125,92 +149,44 @@ public class LaundryManager {
                 );
     }
 
-    /**
-     * Проверяет очередь и посылает уведомление следующему.
-     * Запускается после того, как текущая стирка полностью завершилась.
-     */
-    void notifyNextInQueue() {
+    /** Отменить бронь: ищем записи, где userId == userId, и удаляем */
+    public void cancelReservation(String userId) {
         laundryRef.child("reservations")
-                .limitToFirst(1)
+                .orderByChild("userId")
+                .equalTo(userId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (!snapshot.exists()) return;
-
-                        // Берём первый элемент очереди
-                        DataSnapshot first = snapshot.getChildren().iterator().next();
-                        String nextUserId = first.getValue(String.class);
-                        if (nextUserId != null) {
-                            // Отправляем уведомление “Ваша очередь”
-                            notificationHelper.sendReadyNotification(nextUserId);
+                        boolean found = false;
+                        for (DataSnapshot child : snapshot.getChildren()) {
+                            child.getRef().removeValue();
+                            found = true;
                         }
-                        // Удаляем этот элемент из очереди
-                        first.getRef().removeValue();
+                        if (found) {
+                            Toast.makeText(context,
+                                    "Бронь отменена", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Toast.makeText(context,
+                                    "Вы не в очереди", Toast.LENGTH_SHORT).show();
+                        }
                     }
-                    @Override public void onCancelled(@NonNull DatabaseError error) {/**/}
+                    @Override public void onCancelled(@NonNull DatabaseError error) {
+                        Toast.makeText(context,
+                                "Ошибка отмены брони", Toast.LENGTH_SHORT).show();
+                    }
                 });
     }
 
-    /**
-     * Запускает CountDownTimer (progressBar показывает прогресс).
-     */
-    private void startTimer(long durationMs) {
-        stopTimer();
-        progressBar.setMax((int) durationMs);
-
-        // Используем AtomicLong, чтобы знать исходное время
-        AtomicLong total = new AtomicLong(durationMs);
-
-        timer = new CountDownTimer(durationMs, 1000) {
-            @Override public void onTick(long millisUntilFinished) {
-                int progress = (int) (total.get() - millisUntilFinished);
-                progressBar.setProgress(progress);
-            }
-
-            @Override public void onFinish() {
-                // Устанавливаем прогресс в полный максимум
-                progressBar.setProgress((int) total.get());
-
-                // Сбрасываем статус машинки в “available”
-                resetLaundry();
-
-                // Уведомляем текущего пользователя локально
-                if (isNotificationEnabled) {
-                    notificationHelper.sendFinishNotification();
-                }
-
-                // Выводим Toast
-                Toast.makeText(context,
-                        "Стирка завершена", Toast.LENGTH_SHORT).show();
-
-                // Уведомляем следующего в очереди
-                notifyNextInQueue();
-            }
-        }.start();
+    /** Слушатель статуса и очереди: передаётся во фрагмент, чтобы обновлять UI */
+    public void addStatusListener(ValueEventListener listener) {
+        laundryRef.addValueEventListener(listener);
     }
 
-    /**
-     * Останавливает таймер, если он запущен.
-     */
-    public void stopTimer() {
-        if (timer != null) {
-            timer.cancel();
-            timer = null;
-        }
+    public void removeStatusListener(ValueEventListener listener) {
+        laundryRef.removeEventListener(listener);
     }
 
-    /**
-     * Включить/выключить локальные уведомления (по окончании стирки).
-     */
-    public void setNotificationEnabled(boolean enabled) {
-        this.isNotificationEnabled = enabled;
-    }
-
-    /**
-     * Если понадобится удалить слушатели внутри LaundryManager, можно расширить этот метод.
-     */
+    /** Необходимо вызывать в onDestroyView(), чтобы отменить таймер */
     public void cleanup() {
-        stopTimer();
-        // Слушателей (ValueEventListener) в данном классе нет,
-        // поэтому дополнительных действий не требуется.
+        cancelWashTimer();
     }
 }

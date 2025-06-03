@@ -28,11 +28,10 @@
         android:src="@android:drawable/ic_input_add"
         app:layout_constraintBottom_toTopOf="@+id/eventsRecyclerView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.042"
+        app:layout_constraintHorizontal_bias="0.31"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/searchView"
         app:layout_constraintVertical_bias="0.0" />
-
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/eventsRecyclerView"
@@ -112,12 +111,26 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/notificationRecycler"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="360dp"
+        android:layout_height="351dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintHorizontal_bias="0.49"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/switchTabs"
         app:layout_constraintVertical_bias="0.0" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="5dp"
+        android:text="Мероприятие"
+        app:layout_constraintBottom_toTopOf="@+id/eventsRecyclerView"
+        app:layout_constraintEnd_toStartOf="@+id/addEventButton"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/searchView"
+        app:layout_constraintVertical_bias="1.0" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -6,252 +6,173 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- ScrollView для прокрутки содержимого -->
+    <!-- Скролл для всего содержимого -->
     <ScrollView
+        android:id="@+id/scrollView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <androidx.cardview.widget.CardView
-            android:id="@+id/groupView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="12dp"
-            app:cardUseCompatPadding="true"
-            android:layout_margin="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="МОЯ КОМНАТА"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp"/>
-
-                    <TextView
-                        android:id="@+id/roomNumber"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="1502A"
-                        android:textSize="24sp"
-                        android:textStyle="bold"/>
-
-                    <!-- Соседи -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Жители:"
-                        android:textSize="14sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="8dp"/>
-
-                    <LinearLayout
-                        android:id="@+id/roommatesContainer"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="4dp"/>
-
-                </LinearLayout>
-
-                <!-- ДЕЛА И РАСХОДЫ -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp"
-                    android:layout_marginTop="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ДЕЛА"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp"/>
-
-                    <LinearLayout
-                        android:id="@+id/tasksContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="РАСХОДЫ"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp"/>
-
-                    <LinearLayout
-                        android:id="@+id/expensesContainer"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"/>
-
-                    <!-- Кнопка для добавления заметок -->
-                    <Button
-                        android:id="@+id/btnAddNote"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Добавить заметку"
-                        android:layout_marginTop="16dp"/>
-                </LinearLayout>
-
-                <!-- ПРАЧЕЧНАЯ -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="8dp"
-                    android:layout_marginTop="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Прачечная"
-                        android:textSize="16sp"/>
-
-                    <TextView
-                        android:id="@+id/laundryTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Стиралка № 1 ●"
-                        android:textSize="18sp"
-                        android:layout_marginTop="8dp"/>
-
-                    <Button
-                        android:id="@+id/buttonOccupy"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Занять"
-                        android:layout_marginTop="12dp"/>
-
-                    <Button
-                        android:id="@+id/buttonReserve"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Забронировать"
-                        android:layout_marginTop="8dp"
-                        android:visibility="gone"/>
-
-                    <TextView
-                        android:id="@+id/reservationQueue"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text=""
-                        android:textSize="14sp"
-                        android:layout_marginTop="8dp"/>
-                </LinearLayout>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-    </ScrollView>
-
-    <!-- Второй экран: Расширенная прачечная -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/laundryView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:visibility="gone"
-        app:cardCornerRadius="12dp"
-        app:cardUseCompatPadding="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Назад -->
-            <Button
-                android:id="@+id/buttonBack"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="←"
-                android:layout_gravity="start"
-                android:background="?android:selectableItemBackground"
-                android:padding="8dp"/>
-
-            <!-- Заголовок прачечной -->
+            <!-- === Секция: Моя комната и соседи === -->
             <TextView
-                android:id="@+id/laundryExpandedTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Стиралка №1 ●"
-                android:textSize="18sp"
-                android:layout_marginTop="16dp"/>
+                android:text="МОЯ КОМНАТА"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+            <TextView
+                android:id="@+id/roomNumber"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
 
-            <!-- Прогресс-круг -->
-            <ProgressBar
-                android:id="@+id/progressBar"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:progressDrawable="@drawable/circle_progress"
-                android:max="100"
-                android:progress="0"
-                android:layout_gravity="center"
-                android:indeterminate="false"
-                android:layout_marginTop="24dp" />
-
-            <!-- Таймер -->
-            <EditText
-                android:id="@+id/editTimer"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:hint="Введите время (мин)"
-                android:inputType="number"
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Жители:"
                 android:textSize="14sp"
-                android:padding="8dp"
-                android:layout_marginTop="16dp" />
+                android:textStyle="bold"/>
 
-            <!-- Кнопка "Начать стирку" -->
+            <LinearLayout
+                android:id="@+id/roommatesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="4dp"/>
+
+            <!-- Разделитель -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <!-- === Секция: Прачечная === -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Прачечная"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/laundryStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="○ Свободна"
+                android:textSize="16sp"/>
+
+            <EditText
+                android:id="@+id/editMinutes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Минуты"
+                android:inputType="number"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/buttonOccupy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Занять"/>
+
             <Button
                 android:id="@+id/buttonStartWash"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:text="Начать стирку"
-                android:layout_marginTop="8dp" />
+                android:visibility="gone"/>
 
-            <!-- Переключатель уведомлений -->
-            <CheckBox
-                android:id="@+id/checkNotify"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Включить уведомления"
-                android:textSize="14sp"
-                android:layout_marginTop="8dp" />
-
-            <!-- Кнопка "Назад" -->
             <Button
-                android:id="@+id/buttonBackExpanded"
+                android:id="@+id/buttonReserve"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Назад"
-                android:layout_marginTop="8dp" />
+                android:layout_marginTop="8dp"
+                android:text="Забронировать"
+                android:visibility="gone"/>
+
+            <Button
+                android:id="@+id/buttonCancelReserve"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Отменить бронь"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/laundryQueueInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text=""
+                android:textSize="14sp"/>
+
+            <!-- Разделитель -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#DDDDDD"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"/>
+
+            <!-- === Секция: Запрос на услугу === -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Запрос на услугу"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <EditText
+                android:id="@+id/editRoom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="Номер комнаты"
+                android:inputType="text"/>
+
+            <EditText
+                android:id="@+id/editProblem"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:hint="Опишите проблему"
+                android:inputType="textMultiLine"
+                android:lines="3"
+                android:maxLines="5"/>
+
+            <Button
+                android:id="@+id/buttonSendService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Отправить запрос"/>
+
+            <TextView
+                android:id="@+id/serviceInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text=""
+                android:textColor="#007700"
+                android:textSize="14sp"/>
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -42,6 +42,7 @@ dependencies {
     implementation("com.squareup.okio:okio:3.7.0")
     implementation("com.github.bumptech.glide:glide:4.15.1")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
+    implementation("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)

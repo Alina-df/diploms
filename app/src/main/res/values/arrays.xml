@@ -16,9 +16,9 @@
 
     <string-array name="dorms">
         <item>Выберите общежитие</item>
-        <item>8\\1</item>
-        <item>8\\2</item>
-        <item>7\\1</item>
-        <item>7\\2</item>
+        <item>8//1</item>
+        <item>8//2</item>
+        <item>7//1</item>
+        <item>7//2</item>
     </string-array>
 </resources>

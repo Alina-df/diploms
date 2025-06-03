@@ -77,24 +77,16 @@ public class RegisterActivity extends AppCompatActivity {
                     isUpdating = false;
                     return;
                 }
-
-                // Удаляем всё, кроме цифр
                 String digits = s.toString().replaceAll("[^\\d]", "");
-
-                // Удаляем лишнюю 8 в начале и добавляем +7
                 if (digits.startsWith("8")) {
                     digits = digits.substring(1);
                 }
                 if (!digits.startsWith("7")) {
                     digits = "7" + digits;
                 }
-
-                // Обрезаем до 11 цифр максимум (формат +7XXXXXXXXXX)
                 if (digits.length() > 11) {
                     digits = digits.substring(0, 11);
                 }
-
-                // Финальный формат: просто +7 и цифры
                 String result = "+" + digits;
 
                 isUpdating = true;
@@ -237,13 +229,11 @@ public class RegisterActivity extends AppCompatActivity {
                                     showToast("Ошибка сохранения данных: " + e.getMessage()));
                 });
     }
-
     private void registrationSuccess() {
         showToast("Регистрация успешна");
         startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
         finish();
     }
-
     private void showToast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }

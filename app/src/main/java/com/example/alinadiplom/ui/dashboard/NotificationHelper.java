@@ -1,20 +1,23 @@
-// Файл: app/src/main/java/com/example/alinadiplom/ui/dashboard/NotificationHelper.java
-
+// Файл: NotificationHelper.java
 package com.example.alinadiplom.ui.dashboard;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 
 import androidx.core.app.NotificationCompat;
 
 import com.example.alinadiplom.R;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Хелпер для отправки локальных уведомлений.
- * Пример: уведомление, когда стирка завершилась, и уведомление следующему человеку в очереди.
+ * Хелпер для отправки локальных уведомлений о:
+ * - завершении стирки текущим пользователем,
+ * - нотификации «ваша очередь» следующему в очереди (через запись в Realtime DB).
  */
 public class NotificationHelper {
 
@@ -26,7 +29,6 @@ public class NotificationHelper {
         createChannel();
     }
 
-    // Создаём канал (если еще не создан)
     private void createChannel() {
         NotificationManager manager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -36,18 +38,16 @@ public class NotificationHelper {
                     "Laundry Notifications",
                     NotificationManager.IMPORTANCE_DEFAULT
             );
-            channel.setDescription("Уведомления о статусе стиралки");
+            channel.setDescription("Уведомления о статусе стиралок");
             manager.createNotificationChannel(channel);
         }
     }
 
-    /**
-     * Отправить локальное уведомление тому же пользователю о завершении стирки.
-     */
-    public void sendFinishNotification() {
+    /** Локальная нотификация о завершении стирки (на текущее устройство). */
+    public void sendFinishNotification(String laundryId) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("Стиральная машина")
+                .setContentTitle("Стиралка " + laundryId)
                 .setContentText("Ваша стирка завершена. Пожалуйста, заберите вещи.")
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT);
@@ -55,21 +55,25 @@ public class NotificationHelper {
         NotificationManager manager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
-            manager.notify((int) System.currentTimeMillis(), builder.build());
+            int notificationId = (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
+            manager.notify(notificationId, builder.build());
         }
     }
-    public void sendReadyNotification(String nextUserId) {
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setContentTitle("Стиральная машина")
-                .setContentText("Теперь ваша очередь использовать стиралку!")
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-        NotificationManager manager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.notify((int) System.currentTimeMillis(), builder.build());
-        }
+    /**
+     * “Ваша очередь” → пишем в /users/{nextUserId}/laundryNotifications
+     * Чтобы следующий пользователь получил Toast (через слушатель в DashboardFragment).
+     */
+    public void sendQueueNotification(String nextUserId, String laundryId) {
+        DatabaseReference notifRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(nextUserId)
+                .child("laundryNotifications")
+                .push();
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("message", "Теперь ваша очередь использовать " + laundryId);
+        payload.put("timestamp", System.currentTimeMillis());
+        notifRef.setValue(payload);
     }
 }
