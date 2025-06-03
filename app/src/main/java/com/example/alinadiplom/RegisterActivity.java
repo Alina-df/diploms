@@ -1,26 +1,25 @@
 package com.example.alinadiplom;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.alinadiplom.LoginActivity;
+import com.example.alinadiplom.R;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ServerValue;
-import com.google.firebase.database.ValueEventListener;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,15 +27,17 @@ import java.util.Objects;
 
 public class RegisterActivity extends AppCompatActivity {
 
-    EditText number, password, fio, room;
+    EditText email, password, fio, room, username, phone;
     Spinner spinnerUniversity, spinnerFaculty, spinnerDorm;
-    CheckBox checkAdminRequest;
-    Button register;
     RadioGroup userTypeRadioGroup;
+    Button register;
+
     FirebaseAuth mAuth;
     DatabaseReference mDatabase;
     FirebaseDatabase database;
+    String formattedPhone = "";
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -44,220 +45,206 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Инициализация
         mAuth = FirebaseAuth.getInstance();
-        number = findViewById(R.id.textNumber);
+        database = FirebaseDatabase.getInstance();
+        mDatabase = database.getReference();
+
+        email = findViewById(R.id.textEmail);
         password = findViewById(R.id.textPassword);
         fio = findViewById(R.id.textFio);
         room = findViewById(R.id.textRoom);
+        username = findViewById(R.id.textUsername);
+        phone = findViewById(R.id.textNumber);
         spinnerUniversity = findViewById(R.id.spinnerUniversity);
         spinnerFaculty = findViewById(R.id.spinnerFaculty);
         spinnerDorm = findViewById(R.id.spinnerDorm);
-        checkAdminRequest = findViewById(R.id.checkAdminRequest);
         register = findViewById(R.id.buttonSubmit);
         userTypeRadioGroup = findViewById(R.id.userTypeRadioGroup);
 
-        // Настройка Spinner
-        ArrayAdapter<CharSequence> universityAdapter = ArrayAdapter.createFromResource(this,
-                R.array.universities, android.R.layout.simple_spinner_item);
-        universityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerUniversity.setAdapter(universityAdapter);
+        // Кастомная маска телефона через TextWatcher
+        phone.addTextChangedListener(new TextWatcher() {
+            private boolean isUpdating;
+            private String oldText = "";
 
-        ArrayAdapter<CharSequence> facultyAdapter = ArrayAdapter.createFromResource(this,
-                R.array.faculties, android.R.layout.simple_spinner_item);
-        facultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerFaculty.setAdapter(facultyAdapter);
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
-        ArrayAdapter<CharSequence> dormAdapter = ArrayAdapter.createFromResource(this,
-                R.array.dorms, android.R.layout.simple_spinner_item);
-        dormAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerDorm.setAdapter(dormAdapter);
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
 
-        // По умолчанию показываем поля для жителей
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isUpdating) {
+                    isUpdating = false;
+                    return;
+                }
+
+                // Удаляем всё, кроме цифр
+                String digits = s.toString().replaceAll("[^\\d]", "");
+
+                // Удаляем лишнюю 8 в начале и добавляем +7
+                if (digits.startsWith("8")) {
+                    digits = digits.substring(1);
+                }
+                if (!digits.startsWith("7")) {
+                    digits = "7" + digits;
+                }
+
+                // Обрезаем до 11 цифр максимум (формат +7XXXXXXXXXX)
+                if (digits.length() > 11) {
+                    digits = digits.substring(0, 11);
+                }
+
+                // Финальный формат: просто +7 и цифры
+                String result = "+" + digits;
+
+                isUpdating = true;
+                phone.setText(result);
+                phone.setSelection(result.length());
+
+                formattedPhone = result;
+            }
+
+        });
+
+        // Настройка спиннеров
+        setupSpinner(spinnerUniversity, R.array.universities);
+        setupSpinner(spinnerFaculty, R.array.faculties);
+        setupSpinner(spinnerDorm, R.array.dorms);
+
+        // Обработка типа пользователя
         findViewById(R.id.residentFieldsLayout).setVisibility(View.VISIBLE);
-
-        // Обработка выбора типа пользователя
         userTypeRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.radioResident) {
                 findViewById(R.id.residentFieldsLayout).setVisibility(View.VISIBLE);
-            } else if (checkedId == R.id.radioEmployee) {
+            } else {
                 findViewById(R.id.residentFieldsLayout).setVisibility(View.GONE);
             }
         });
 
-        register.setOnClickListener(v -> {
-            String numberText = number.getText().toString().trim();
-            String pass = password.getText().toString().trim();
-            String fioText = fio.getText().toString().trim();
-            boolean isResident = userTypeRadioGroup.getCheckedRadioButtonId() == R.id.radioResident;
+        register.setOnClickListener(v -> attemptRegistration());
+    }
 
-            // Валидация общих полей
-            if (numberText.isEmpty()) {
-                Toast.makeText(this, "Введите номер телефона", Toast.LENGTH_SHORT).show();
+    private void setupSpinner(Spinner spinner, int arrayResId) {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                arrayResId, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+    }
+
+    private void attemptRegistration() {
+        String emailText = email.getText().toString().trim();
+        String pass = password.getText().toString().trim();
+        String fioText = fio.getText().toString().trim();
+        String usernameText = username.getText().toString().trim();
+        String phoneText = formattedPhone.trim();
+        boolean isResident = userTypeRadioGroup.getCheckedRadioButtonId() == R.id.radioResident;
+
+        // Валидация
+        if (usernameText.isEmpty()) {
+            showToast("Введите логин");
+            return;
+        }
+        if (emailText.isEmpty() || !emailText.contains("@")) {
+            showToast("Введите корректную почту");
+            return;
+        }
+        if (pass.length() < 6) {
+            showToast("Пароль должен быть не менее 6 символов");
+            return;
+        }
+        if (fioText.isEmpty()) {
+            showToast("Введите ФИО");
+            return;
+        }
+        if (phoneText.isEmpty()) {
+            showToast("Введите номер телефона");
+            return;
+        }
+
+        if (isResident) {
+            String universityText = spinnerUniversity.getSelectedItem().toString();
+            String facultyText = spinnerFaculty.getSelectedItem().toString();
+            String dormText = spinnerDorm.getSelectedItem().toString();
+            String roomText = room.getText().toString().trim();
+
+            if (roomText.isEmpty() || universityText.contains("Выберите") ||
+                    facultyText.contains("Выберите") || dormText.contains("Выберите")) {
+                showToast("Заполните все поля жителя");
                 return;
             }
-            if (pass.length() < 6) {
-                Toast.makeText(this, "Пароль должен быть не менее 6 символов", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            if (fioText.isEmpty()) {
-                Toast.makeText(this, "Введите ФИО", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        }
 
-            // Валидация полей для жителей
-            if (isResident) {
-                String roomText = room.getText().toString().trim();
-                String universityText = spinnerUniversity.getSelectedItem().toString();
-                String facultyText = spinnerFaculty.getSelectedItem().toString();
-                String dormText = spinnerDorm.getSelectedItem().toString();
-
-                Toast.makeText(this, "Выбранное общежитие: " + dormText, Toast.LENGTH_SHORT).show();
-
-                if (roomText.isEmpty()) {
-                    Toast.makeText(this, "Введите номер комнаты", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (universityText.equals("Выберите университет")) {
-                    Toast.makeText(this, "Выберите университет", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (facultyText.equals("Выберите факультет")) {
-                    Toast.makeText(this, "Выберите факультет", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                if (dormText.equals("Выберите общежитие")) {
-                    Toast.makeText(this, "Выберите общежитие", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                String email = numberText + "@example.com";
-                mAuth.createUserWithEmailAndPassword(email, pass)
-                        .addOnCompleteListener(task -> {
-                            if (!task.isSuccessful()) {
-                                String err = Objects.requireNonNull(task.getException()).getMessage();
-                                Toast.makeText(this, "Ошибка: " + err, Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            // Успешно зарегистрировались
-                            String uid = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
-                            // Собираем данные
-                            Map<String, Object> userData = new HashMap<>();
-                            userData.put("fio", fioText);
-                            userData.put("number", numberText);
-                            userData.put("role", "resident");
-                            userData.put("university", universityText);
-                            userData.put("faculty", facultyText);
-                            userData.put("dorm", dormText);
-                            userData.put("room", roomText);
-
-                            Toast.makeText(this, "Сохраняем данные: " + userData.toString(), Toast.LENGTH_LONG).show();
-
-                            database = FirebaseDatabase.getInstance();
-                            mDatabase = database.getReference();
-
-                            // 1) Сохраняем данные пользователя в Users
-                            mDatabase.child("Users")
-                                    .child(uid)
-                                    .setValue(userData)
-                                    .addOnCompleteListener(userSaveTask -> {
-                                        if (!userSaveTask.isSuccessful()) {
-                                            Toast.makeText(this, "Ошибка сохранения профиля", Toast.LENGTH_SHORT).show();
-                                            return;
-                                        }
-
-                                        // 2) Добавляем в rooms
-                                        String safeRoomKey = roomText.replace("/", "\\");
-                                        // Обновляем путь для учета общежития
-                                        DatabaseReference roomRef = mDatabase.child("rooms")
-                                                .child(dormText)
-                                                .child(safeRoomKey)
-                                                .child("residents")
-                                                .child(uid);
-                                        roomRef.setValue(fioText).addOnCompleteListener(roomTask -> {
-                                            if (!roomTask.isSuccessful()) {
-                                                Toast.makeText(this, "Ошибка добавления в комнату", Toast.LENGTH_SHORT).show();
-                                                return;
-                                            }
-                                            proceedWithAdminCheck(uid, fioText, numberText);
-                                        }).addOnFailureListener(e -> {
-                                            Toast.makeText(this, "Ошибка добавления в комнату: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                        });
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Toast.makeText(this, "Ошибка БД: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                    });
-                        });
+        // Проверка логина
+        mDatabase.child("usernames").child(usernameText).get().addOnCompleteListener(checkTask -> {
+            if (checkTask.getResult().exists()) {
+                showToast("Логин уже занят");
             } else {
-                String email = numberText + "@example.com";
-                mAuth.createUserWithEmailAndPassword(email, pass)
-                        .addOnCompleteListener(task -> {
-                            if (!task.isSuccessful()) {
-                                String err = Objects.requireNonNull(task.getException()).getMessage();
-                                Toast.makeText(this, "Ошибка: " + err, Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                            String uid = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
-                            Map<String, Object> userData = new HashMap<>();
-                            userData.put("fio", fioText);
-                            userData.put("number", numberText);
-                            userData.put("role", "employee");
-
-                            database = FirebaseDatabase.getInstance();
-                            mDatabase = database.getReference();
-
-                            mDatabase.child("Users")
-                                    .child(uid)
-                                    .setValue(userData)
-                                    .addOnCompleteListener(userSaveTask -> {
-                                        if (!userSaveTask.isSuccessful()) {
-                                            Toast.makeText(this, "Ошибка сохранения профиля", Toast.LENGTH_SHORT).show();
-                                            return;
-                                        }
-                                        proceedWithAdminCheck(uid, fioText, numberText);
-                                    })
-                                    .addOnFailureListener(e -> {
-                                        Toast.makeText(this, "Ошибка БД: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                                    });
-                        });
+                registerUser(emailText, pass, fioText, usernameText, phoneText, isResident);
             }
         });
     }
 
-    // Проверка и добавление админа
-    private void proceedWithAdminCheck(String uid, String fioText, String numberText) {
-        DatabaseReference adminsRef = mDatabase.child("admins");
-        adminsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snap) {
-                if (!snap.exists()) {
-                    Map<String, Object> adminData = new HashMap<>();
-                    adminData.put("fio", fioText);
-                    adminData.put("number", numberText);
-                    adminData.put("role", "admin");
-                    adminsRef.child(uid).setValue(adminData);
-                } else if (checkAdminRequest.isChecked()) {
-                    Map<String, Object> req = new HashMap<>();
-                    req.put("fio", fioText);
-                    req.put("number", numberText);
-                    req.put("timestamp", ServerValue.TIMESTAMP);
-                    mDatabase.child("pendingAdmins")
-                            .child(uid)
-                            .setValue(req);
-                }
-                Toast.makeText(RegisterActivity.this,
-                        "Регистрация успешна!",
-                        Toast.LENGTH_SHORT).show();
-                startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
-                finish();
-            }
+    private void registerUser(String emailText, String pass, String fioText, String usernameText, String phoneText, boolean isResident) {
+        mAuth.createUserWithEmailAndPassword(emailText, pass)
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        showToast("Ошибка: " + Objects.requireNonNull(task.getException()).getMessage());
+                        return;
+                    }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError e) {
-                Toast.makeText(RegisterActivity.this,
-                        "Регистрация завершена, но не смогли проверить админа",
-                        Toast.LENGTH_LONG).show();
-                startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
-                finish();
-            }
-        });
+                    String uid = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
+                    Map<String, Object> userData = new HashMap<>();
+                    userData.put("email", emailText);
+                    userData.put("fio", fioText);
+                    userData.put("username", usernameText);
+                    userData.put("phone", phoneText);
+                    userData.put("uid", uid);
+
+                    if (isResident) {
+                        String universityText = spinnerUniversity.getSelectedItem().toString();
+                        String facultyText = spinnerFaculty.getSelectedItem().toString();
+                        String dormText = spinnerDorm.getSelectedItem().toString();
+                        String roomText = room.getText().toString().trim();
+
+                        userData.put("role", "resident");
+                        userData.put("university", universityText);
+                        userData.put("faculty", facultyText);
+                        userData.put("dorm", dormText);
+                        userData.put("room", roomText);
+                    } else {
+                        userData.put("role", "employee");
+                    }
+
+                    // Сохраняем пользователя и логин
+                    mDatabase.child("Users").child(uid).setValue(userData)
+                            .addOnSuccessListener(unused -> {
+                                mDatabase.child("usernames").child(usernameText).setValue(uid);
+
+                                if (isResident) {
+                                    String dorm = (String) userData.get("dorm");
+                                    String room = ((String) userData.get("room")).replace("/", "\\");
+                                    mDatabase.child("rooms")
+                                            .child(dorm)
+                                            .child(room)
+                                            .child("residents")
+                                            .child(uid)
+                                            .setValue(fioText);
+                                }
+
+                                registrationSuccess();
+                            })
+                            .addOnFailureListener(e ->
+                                    showToast("Ошибка сохранения данных: " + e.getMessage()));
+                });
+    }
+
+    private void registrationSuccess() {
+        showToast("Регистрация успешна");
+        startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
+        finish();
+    }
+
+    private void showToast(String msg) {
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 }

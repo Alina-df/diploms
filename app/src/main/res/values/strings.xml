@@ -9,4 +9,31 @@
     <string name="title_admin_requests">Admin_Request</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="back">Назад</string>
+    <string name="avatar_description">Аватар пользователя</string>
+
+    <!-- Профиль -->
+    <string name="telegram">Telegram</string>
+    <string name="chat">Чат</string>
+    <string name="telegram_not_set">Ссылка на Telegram не указана</string>
+    <string name="auth_required">Требуется авторизация</string>
+
+    <!-- Чат -->
+    <string name="chat_title">Чат</string>
+    <string name="message_hint">Введите сообщение...</string>
+    <string name="send">Отправить</string>
+    <string name="no_messages">Нет сообщений</string>
+
+    <!-- Список чатов -->
+    <string name="chats_title">Сообщения</string>
+    <string name="no_chats">Нет активных чатов</string>
+    <string name="last_message">Последнее сообщение: %s</string>
+
+    <!-- Уведомления -->
+    <string name="new_message">Новое сообщение</string>
+
+    <!-- Ошибки -->
+    <string name="error_loading">Ошибка загрузки</string>
+    <string name="error_opening_chat">Ошибка открытия чата</string>
 </resources>

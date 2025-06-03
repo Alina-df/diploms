@@ -1,5 +1,6 @@
-package com.example.alinadiplom;
+package com.example.alinadiplom.adapter;
 
+import android.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.alinadiplom.R;
+import com.example.alinadiplom.model.Notice;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -57,17 +60,30 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         // Show delete button for admins
         holder.deleteButton.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
         holder.deleteButton.setOnClickListener(v -> {
-            DatabaseReference noticeRef = FirebaseDatabase.getInstance().getReference("notices").child(notice.id);
-            noticeRef.removeValue()
-                    .addOnSuccessListener(aVoid -> {
-                        Log.d(TAG, "Deleted notice: " + notice.id);
-                        // Removal will trigger Firebase listener in HomeFragment
+            new AlertDialog.Builder(holder.itemView.getContext())
+                    .setTitle("Удалить объявление")
+                    .setMessage("Вы уверены, что хотите удалить это объявление?")
+                    .setPositiveButton("Удалить", (dialog, which) -> {
+                        DatabaseReference noticeRef = FirebaseDatabase.getInstance()
+                                .getReference("notices")
+                                .child(notice.id);
+
+                        noticeRef.removeValue()
+                                .addOnSuccessListener(aVoid -> {
+                                    Log.d(TAG, "Deleted notice: " + notice.id);
+                                    // Removal will trigger Firebase listener in HomeFragment
+                                })
+                                .addOnFailureListener(e -> {
+                                    Toast.makeText(holder.itemView.getContext(),
+                                            "Ошибка удаления: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                    Log.e(TAG, "Delete error: " + e.getMessage());
+                                });
                     })
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(holder.itemView.getContext(), "Ошибка удаления: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        Log.e(TAG, "Delete error: " + e.getMessage());
-                    });
+                    .setNegativeButton("Отмена", (dialog, which) -> dialog.dismiss())
+                    .show();
         });
+
 
         // Expand/collapse text on click
         holder.itemView.setOnClickListener(v -> {

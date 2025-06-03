@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- ФИО пользователя -->
+    <TextView
+        android:id="@+id/text_user_fio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Иван Иванов"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
+        android:textColor="@color/black" />
+
+    <!-- Текущая роль (resident/employee/admin) -->
+    <TextView
+        android:id="@+id/text_user_role"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Роль: resident"
+        android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
+        android:layout_marginTop="4dp" />
+
+    <!-- Кнопка «Сделать админом» -->
+    <Button
+        android:id="@+id/button_make_admin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Сделать админом"
+        android:layout_marginTop="8dp"/>
+</LinearLayout>

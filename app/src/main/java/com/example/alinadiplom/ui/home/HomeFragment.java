@@ -7,20 +7,24 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import androidx.appcompat.widget.SearchView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.alinadiplom.AddEventActivity;
 import com.example.alinadiplom.AddNoticeActivity;
-import com.example.alinadiplom.Event;
-import com.example.alinadiplom.EventAdapter;
-import com.example.alinadiplom.Notice;
-import com.example.alinadiplom.NotificationAdapter;
-import com.example.alinadiplom.PeopleAdapter;
+import com.example.alinadiplom.SearchFragment;
+import com.example.alinadiplom.model.Event;
+import com.example.alinadiplom.adapter.EventAdapter;
+import com.example.alinadiplom.model.Notice;
+import com.example.alinadiplom.adapter.NotificationAdapter;
+import com.example.alinadiplom.adapter.PeopleAdapter;
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.databinding.FragmentHomeBinding;
 import com.google.firebase.auth.FirebaseAuth;
@@ -35,10 +39,14 @@ import java.util.List;
 
 public class HomeFragment extends Fragment {
     private static final String TAG = "HomeFragment";
+
     private FragmentHomeBinding binding;
     private NotificationAdapter notificationAdapter;
     private PeopleAdapter peopleAdapter;
+    private EventAdapter eventAdapter;
     private RecyclerView recyclerView;
+    private SearchView searchView;
+
     private List<Notice> adminNotices = new ArrayList<>();
     private List<Notice> peopleNotices = new ArrayList<>();
     private ValueEventListener noticesListener;
@@ -53,25 +61,42 @@ public class HomeFragment extends Fragment {
         binding = FragmentHomeBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
+        // Настраиваем RecyclerView для объявлений/услуг
         recyclerView = root.findViewById(R.id.notificationRecycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Check admin status
+        // Сначала инициализируем адаптеры (будут обновлены после получения роли)
+        notificationAdapter = new NotificationAdapter(adminNotices, isAdmin);
+        peopleAdapter = new PeopleAdapter(peopleNotices, isAdmin);
+        recyclerView.setAdapter(notificationAdapter);
+        searchView = root.findViewById(R.id.searchView);
+
         String uid = FirebaseAuth.getInstance().getCurrentUser() != null ?
                 FirebaseAuth.getInstance().getCurrentUser().getUid() : null;
+
         if (uid != null) {
-            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
+            DatabaseReference userRef = FirebaseDatabase.getInstance()
+                    .getReference("Users")
+                    .child(uid)
+                    .child("role");
+
             userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    // Сразу же проверяем binding
+                    if (binding == null) return;
+
                     String role = snapshot.getValue(String.class);
                     isAdmin = "admin".equals(role);
                     Log.d(TAG, "User is admin: " + isAdmin);
-                    // Reinitialize adapters with admin status
+
+                    // Пересоздаем адаптеры с учётом isAdmin
                     notificationAdapter = new NotificationAdapter(adminNotices, isAdmin);
                     peopleAdapter = new PeopleAdapter(peopleNotices, isAdmin);
-                    // Update RecyclerView based on active tab
-                    if (binding.tabNotices.getCurrentTextColor() == getResources().getColor(R.color.blue)) {
+
+                    // Показываем правильный адаптер в соответствии с текущим выделенным табом
+                    int colorNotices = getResources().getColor(R.color.blue);
+                    if (binding.tabNotices.getCurrentTextColor() == colorNotices) {
                         recyclerView.setAdapter(notificationAdapter);
                     } else {
                         recyclerView.setAdapter(peopleAdapter);
@@ -80,18 +105,17 @@ public class HomeFragment extends Fragment {
 
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
-                    Toast.makeText(getContext(), "Ошибка проверки прав: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(),
+                                "Ошибка проверки прав: " + error.getMessage(),
+                                Toast.LENGTH_LONG).show();
+                    }
                     Log.e(TAG, "Admin check error: " + error.getMessage());
                 }
             });
         }
 
-        // Initialize adapters (default, will be updated after admin check)
-        notificationAdapter = new NotificationAdapter(adminNotices, isAdmin);
-        peopleAdapter = new PeopleAdapter(peopleNotices, isAdmin);
-        recyclerView.setAdapter(notificationAdapter);
-
-        // Tab switchers
+        // Инициализируем табы
         binding.tabNotices.setOnClickListener(v -> {
             binding.tabNotices.setTextColor(getResources().getColor(R.color.blue));
             binding.tabPeople.setTextColor(getResources().getColor(R.color.gray));
@@ -106,28 +130,37 @@ public class HomeFragment extends Fragment {
             Log.d(TAG, "Switched to Люди tab, people notices: " + peopleNotices.size());
         });
 
-        // Events RecyclerView
+        // RecyclerView для мероприятий (горизонтальный)
         RecyclerView eventsRecyclerView = root.findViewById(R.id.eventsRecyclerView);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(
+                getContext(), LinearLayoutManager.HORIZONTAL, false);
         eventsRecyclerView.setLayoutManager(layoutManager);
 
         List<Event> eventList = new ArrayList<>();
-        eventList.add(new Event("Киновечер", R.drawable.movie_night));
-        eventList.add(new Event("Песни под гитару", R.drawable.guitar_night));
-        eventList.add(new Event("Мастер-класс", R.drawable.master_class));
-        eventList.add(new Event("Брейншторминг", R.drawable.brainstorming));
+        eventAdapter = new EventAdapter(getContext(), eventList);
+        eventsRecyclerView.setAdapter(eventAdapter);
 
-        EventAdapter adapter = new EventAdapter(getContext(), eventList);
-        eventsRecyclerView.setAdapter(adapter);
+        // Загрузка мероприятий из Firebase
+        loadEventsFromFirebase(eventAdapter, eventList);
 
-        // Add notice button
+        // Кнопки “Добавить объявление” и “Добавить мероприятие”
         ImageButton addNoticeBtn = root.findViewById(R.id.addNoticeButton);
         addNoticeBtn.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), AddNoticeActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(getActivity(), AddNoticeActivity.class));
         });
 
-        // Load notices
+        ImageButton addEventBtn = root.findViewById(R.id.addEventButton);
+        addEventBtn.setOnClickListener(v -> {
+            startActivity(new Intent(getActivity(), AddEventActivity.class));
+        });
+        searchView.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fragment_container, new SearchFragment());
+            transaction.addToBackStack(null);
+            transaction.commit();
+        });
+
+        // Наконец, запускаем загрузку объявлений/услуг
         loadNoticesFromFirebase();
 
         return root;
@@ -136,81 +169,117 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        loadNoticesFromFirebase();
+        // При возвращении во фрагмент обновляем списки
+        if (noticeListenerExists()) {
+            loadNoticesFromFirebase();
+        }
+        loadEventsFromFirebase(eventAdapter, new ArrayList<>());
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        // Перед обнулением binding обязательно отписаться от слушателей!
         if (noticesListener != null) {
-            FirebaseDatabase.getInstance().getReference("notices").removeEventListener(noticesListener);
+            FirebaseDatabase.getInstance()
+                    .getReference("notices")
+                    .removeEventListener(noticesListener);
+            noticesListener = null;
         }
         binding = null;
     }
 
+    private void loadEventsFromFirebase(EventAdapter adapter, List<Event> eventList) {
+        DatabaseReference eventsRef =
+                FirebaseDatabase.getInstance().getReference("events");
+
+        eventsRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // Проверяем binding
+                if (binding == null) return;
+
+                eventList.clear();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Event event = ds.getValue(Event.class);
+                    if (event != null) {
+                        eventList.add(event);
+                    }
+                }
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Ошибка загрузки мероприятий: " + error.getMessage());
+            }
+        });
+    }
+
     private void loadNoticesFromFirebase() {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("notices");
+
+        // Если предыдущий слушатель существует, удаляем его
         if (noticesListener != null) {
             ref.removeEventListener(noticesListener);
         }
+
         noticesListener = ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (binding == null) return;
+
                 adminNotices.clear();
                 peopleNotices.clear();
 
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     try {
-                        Notice notice = new Notice();
-                        notice.id = ds.child("id").getValue(String.class);
-                        notice.title = ds.child("title").getValue(String.class);
-                        notice.body = ds.child("body").getValue(String.class);
-                        notice.date = ds.child("date").getValue(String.class);
-                        Boolean isAdmin = ds.child("isAdmin").getValue(Boolean.class);
-                        notice.isAdmin = isAdmin != null && isAdmin;
-                        notice.userId = ds.child("userId").getValue(String.class);
-                        notice.userName = ds.child("userName").getValue(String.class);
-                        notice.room = ds.child("room").getValue(String.class);
-                        notice.tags = ds.child("tags").getValue(String.class);
-                        notice.avatarResId = R.drawable.ic_avatar_placeholder;
+                        Notice notice = ds.getValue(Notice.class);
+                        if (notice == null) continue;
 
-                        Log.d(TAG, "Loaded notice: id=" + notice.id + ", isAdmin=" + notice.isAdmin +
-                                ", userName=" + notice.userName + ", room=" + notice.room);
+                        // Ключ узла — это adId!
+                        notice.id = ds.getKey();
+
+                        // Остальные поля заполняются автоматически через ds.getValue(Notice.class)
+                        Boolean isAdminNode = ds.child("isAdmin").getValue(Boolean.class);
+                        notice.isAdmin = isAdminNode != null && isAdminNode;
 
                         if (notice.isAdmin) {
                             adminNotices.add(notice);
                         } else {
                             if (notice.userName != null && notice.body != null) {
                                 peopleNotices.add(notice);
-                            } else {
-                                Log.w(TAG, "Skipping invalid individual notice: id=" + notice.id);
                             }
                         }
                     } catch (Exception e) {
-                        Log.e(TAG, "Error parsing notice: " + ds.getKey() + ", error: " + e.getMessage());
+                        Log.e(TAG, "Error parsing notice: " + ds.getKey() + " | " + e.getMessage());
                     }
                 }
 
-                Log.d(TAG, "Admin notices: " + adminNotices.size() + ", People notices: " + peopleNotices.size());
                 notificationAdapter.notifyDataSetChanged();
                 peopleAdapter.notifyDataSetChanged();
 
-                if (binding != null) {
-                    if (binding.tabNotices.getCurrentTextColor() == getResources().getColor(R.color.blue)) {
-                        recyclerView.setAdapter(notificationAdapter);
-                    } else {
-                        recyclerView.setAdapter(peopleAdapter);
-                    }
+                int colorNotices = getResources().getColor(R.color.blue);
+                if (binding.tabNotices.getCurrentTextColor() == colorNotices) {
+                    recyclerView.setAdapter(notificationAdapter);
+                } else {
+                    recyclerView.setAdapter(peopleAdapter);
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (getContext() != null) {
-                    Toast.makeText(getContext(), "Ошибка загрузки объявлений: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                if (binding != null && getContext() != null) {
+                    Toast.makeText(getContext(),
+                            "Ошибка загрузки объявлений: " + error.getMessage(),
+                            Toast.LENGTH_LONG).show();
                 }
                 Log.e(TAG, "Firebase error: " + error.getMessage());
             }
         });
+    }
+
+    private boolean noticeListenerExists() {
+        return noticesListener != null;
     }
 }

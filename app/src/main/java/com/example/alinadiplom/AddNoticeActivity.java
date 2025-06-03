@@ -122,7 +122,7 @@ public class AddNoticeActivity extends AppCompatActivity {
                 userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String userName = snapshot.child("userName").getValue(String.class);
+                        String userName = snapshot.child("fio").getValue(String.class);
                         String room = snapshot.child("room").getValue(String.class);
                         Log.d(TAG, "User data - userName: " + userName + ", room: " + room);
                         saveNotice(id, title, body, date, isAdminNotice, userName, room, finalFormattedTags);

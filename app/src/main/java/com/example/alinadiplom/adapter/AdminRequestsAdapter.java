@@ -1,4 +1,4 @@
-package com.example.alinadiplom;
+package com.example.alinadiplom.adapter;
 
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -10,6 +10,9 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.alinadiplom.model.AdminRequest;
+import com.example.alinadiplom.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +27,7 @@ public class AdminRequestsAdapter extends RecyclerView.Adapter<AdminRequestsAdap
     private List<AdminRequest> requests = new ArrayList<>();
     private final OnActionListener listener;
 
-    public AdminRequestsAdapter(List<AdminRequest> list, OnActionListener listener) {
+    public AdminRequestsAdapter(OnActionListener listener) {
         this.listener = listener;
     }
 

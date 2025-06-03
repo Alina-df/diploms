@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="universities">
+        <item>Выберите университет</item>
+        <item>СВФУ</item>
+    </string-array>
+
+    <string-array name="faculties">
+        <item>Выберите факультет</item>
+        <item>ГРФ</item>
+        <item>ФЭИ</item>
+        <item>ИП</item>
+        <item>ИТИ</item>
+        <item>ИМИ</item>
+    </string-array>
+
+    <string-array name="dorms">
+        <item>Выберите общежитие</item>
+        <item>8\\1</item>
+        <item>8\\2</item>
+        <item>7\\1</item>
+        <item>7\\2</item>
+    </string-array>
+</resources>

@@ -9,7 +9,12 @@
         android:id="@+id/navigation_home"
         android:name="com.example.alinadiplom.ui.home.HomeFragment"
         android:label="@string/title_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_home_to_person"
+            app:destination="@id/personProfileFragment" >
+        </action>
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_dashboard"
@@ -34,11 +39,25 @@
         android:name="com.example.alinadiplom.ui.settings.SettingsFragment"
         android:label="Настройки"
         tools:layout="@layout/fragment_settings"/>
+    <fragment
+        android:id="@+id/personProfileFragment"
+        android:name="com.example.alinadiplom.ui.profile.PersonProfileFragment"
+        android:label="Человек"
+        tools:layout="@layout/fragment_person_profile" >
+        <action
+            android:id="@+id/action_to_chat_list"
+            app:destination="@id/ChatListFragment" />
+    </fragment>
 
     <fragment
         android:id="@+id/navigation_admin_requests"
-        android:name="com.example.alinadiplom.FragmentAdminRequests"
+        android:name="com.example.alinadiplom.FragmentUsersList"
         android:label="@string/title_admin_requests"
         tools:layout="@layout/fragment_admin_requests" />
+    <fragment
+        android:id="@+id/ChatListFragment"
+        android:name="com.example.alinadiplom.ChatListFragment"
+        android:label="@string/title_admin_requests"
+        tools:layout="@layout/fragment_chat_list" />
 
 </navigation>

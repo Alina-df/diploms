@@ -1,14 +1,18 @@
-package com.example.alinadiplom;
+package com.example.alinadiplom.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.alinadiplom.EventDetailsActivity;
+import com.example.alinadiplom.R;
+import com.example.alinadiplom.model.Event;
 
 import java.util.List;
 
@@ -16,6 +20,15 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
     private Context context;
     private List<Event> eventList;
+    private OnItemClickListener onItemClickListener;
+
+    public interface OnItemClickListener {
+        void onItemClick(Event event);
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.onItemClickListener = listener;
+    }
 
     public EventAdapter(Context context, List<Event> eventList) {
         this.context = context;
@@ -33,7 +46,12 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = eventList.get(position);
         holder.title.setText(event.getTitle());
-        holder.image.setImageResource(event.getImageResId());
+
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, EventDetailsActivity.class);
+            intent.putExtra("event", event); // Теперь работает, т.к. Event реализует Serializable
+            context.startActivity(intent);
+        });
     }
 
     @Override
@@ -42,12 +60,10 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     }
 
     public static class EventViewHolder extends RecyclerView.ViewHolder {
-        ImageView image;
         TextView title;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
-            image = itemView.findViewById(R.id.eventImage);
             title = itemView.findViewById(R.id.eventTitle);
         }
     }

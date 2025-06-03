@@ -32,14 +32,14 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="Номер телефона" />
+            android:text="Электронная почта или Логин" />
 
         <EditText
             android:id="@+id/editNumber"
             android:layout_width="329dp"
             android:layout_height="match_parent"
-            android:hint="+7 (___) ___-__-__"
-            android:inputType="phone"/>
+            android:hint="example@gmail.com"
+            android:inputType="text"/>
     </LinearLayout>
 
     <LinearLayout

@@ -41,12 +41,8 @@ public class MainNavActivity extends AppCompatActivity {
                 .findFragmentById(R.id.nav_host_fragment_activity_main_nav);
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(navView, navController);
-
-        // Скрываем пункт меню для администратора
         MenuItem adminItem = navView.getMenu().findItem(R.id.navigation_admin_requests);
         adminItem.setVisible(false);
-
-        // Проверка авторизации
         String uid = FirebaseAuth.getInstance().getCurrentUser() != null
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid()
                 : null;
@@ -55,8 +51,6 @@ public class MainNavActivity extends AppCompatActivity {
             finish();
             return;
         }
-
-        // Проверка роли администратора через users/<uid>/role
         DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
