@@ -49,7 +49,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, EventDetailsActivity.class);
-            intent.putExtra("event", event); // Теперь работает, т.к. Event реализует Serializable
+            intent.putExtra("event", event);
             context.startActivity(intent);
         });
     }

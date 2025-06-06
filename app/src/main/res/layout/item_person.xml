@@ -13,19 +13,21 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="#0F0281D5"
         android:padding="12dp">
 
         <!-- Аватар -->
+
+        <!-- Имя пользователя -->
         <ImageView
             android:id="@+id/personPhoto"
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_alignParentStart="true"
-            android:layout_centerVertical="true"
+            android:layout_marginStart="14dp"
             android:scaleType="centerCrop"
             android:src="@drawable/circle_progress" />
 
-        <!-- Имя пользователя -->
         <TextView
             android:id="@+id/personName"
             android:layout_width="wrap_content"

@@ -28,7 +28,7 @@ public class ProfileFragment extends Fragment {
     private Button btnSettings, btnDormInfo, btnAdminRequest;
     private DatabaseReference mDatabase;
     private FirebaseAuth mAuth;
-    private FragmentNotificationsBinding binding; // Исправлено на правильный binding
+    private FragmentNotificationsBinding binding;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {

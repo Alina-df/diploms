@@ -5,10 +5,8 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F7FAFC"
     tools:context=".RegisterActivity">
 
-    <!-- Прокрутка для маленьких экранов -->
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
@@ -30,7 +28,7 @@
                 android:layout_marginTop="32dp"
                 android:fontFamily="sans-serif-medium"
                 android:text="Давай знакомиться!"
-                android:textColor="#1A202C"
+                android:textColor="#0281D5"
                 android:textSize="24sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -41,7 +39,7 @@
                 android:id="@+id/userTypeRadioGroup"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -52,20 +50,18 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
-                    android:padding="6dp"
                     android:text="Житель"
-                    android:textColor="#4A5568"
-                    android:textSize="14sp" />
+                    android:textColor="#0281D5"
+                    android:textSize="16sp" />
 
                 <RadioButton
                     android:id="@+id/radioEmployee"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:padding="6dp"
+                    android:layout_marginStart="24dp"
                     android:text="Сотрудник"
-                    android:textColor="#4A5568"
-                    android:textSize="14sp" />
+                    android:textColor="#0281D5"
+                    android:textSize="16sp" />
             </RadioGroup>
 
             <!-- Основной контейнер для полей -->
@@ -74,269 +70,188 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="20dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="20dp"
-                android:background="@drawable/rounded_background"
                 android:orientation="vertical"
-                android:padding="14dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/userTypeRadioGroup">
+
+                <!-- Логин -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="Логин"
-                    android:textColor="#718096"
-                    android:textSize="12sp" />
+                    android:textColor="#0281D5"
+                    android:textSize="14sp" />
 
-                <LinearLayout
+                <EditText
+                    android:id="@+id/textUsername"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="45dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/edit_text_background"
-                    android:gravity="center_vertical"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp">
+                    android:background="@drawable/card_background"
+                    android:hint="Логин"
+                    android:inputType="text"
+                    android:paddingStart="16dp"
+                    android:textColorHint="#78999999"
+                    android:textSize="13sp" />
 
-
-                    <EditText
-                        android:id="@+id/textUsername"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:hint="Example"
-                        android:inputType="text"
-                        android:paddingStart="8dp"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                <!-- Email -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Электронная Почта"
-                    android:textColor="#718096"
-                    android:textSize="12sp" />
+                    android:layout_marginTop="12dp"
+                    android:text="Электронная почта"
+                    android:textColor="#0281D5"
+                    android:textSize="14sp" />
 
-                <LinearLayout
+                <EditText
+                    android:id="@+id/textEmail"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="45dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/edit_text_background"
-                    android:gravity="center_vertical"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp">
+                    android:background="@drawable/card_background"
+                    android:hint="example@gmail.com"
+                    android:inputType="textEmailAddress"
+                    android:paddingStart="16dp"
+                    android:textColorHint="#78999999"
+                    android:textSize="13sp" />
 
-
-                    <EditText
-                        android:id="@+id/textEmail"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:hint="example@gmail.com"
-                        android:inputType="textEmailAddress"
-                        android:paddingStart="8dp"
-                        android:textSize="14sp" />
-                </LinearLayout>
-                <!-- Номер телефона -->
+                <!-- Телефон -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
                     android:text="Номер телефона"
-                    android:textColor="#718096"
-                    android:textSize="12sp" />
+                    android:textColor="#0281D5"
+                    android:textSize="14sp" />
 
-                <LinearLayout
+                <EditText
+                    android:id="@+id/textNumber"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="45dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/edit_text_background"
-                    android:gravity="center_vertical"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp">
-
-
-                    <EditText
-                        android:id="@+id/textNumber"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:hint="+7 (___) ___-__-__"
-                        android:inputType="phone"
-                        android:paddingStart="8dp"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                    android:background="@drawable/card_background"
+                    android:hint="+7 (___) ___-__-__"
+                    android:inputType="phone"
+                    android:paddingStart="16dp"
+                    android:textColorHint="#78999999"
+                    android:textSize="13sp" />
 
                 <!-- Пароль -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:text="Пароль"
-                    android:textColor="#718096"
-                    android:textSize="12sp" />
+                    android:textColor="#0281D5"
+                    android:textSize="14sp" />
 
-                <LinearLayout
+                <EditText
+                    android:id="@+id/textPassword"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="45dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/edit_text_background"
-                    android:gravity="center_vertical"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp">
-
-
-                    <EditText
-                        android:id="@+id/textPassword"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:hint="Пароль"
-                        android:inputType="textPassword"
-                        android:paddingStart="8dp"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                    android:background="@drawable/card_background"
+                    android:hint="Пароль"
+                    android:inputType="textPassword"
+                    android:paddingStart="16dp"
+                    android:textColorHint="#78999999"
+                    android:textSize="13sp" />
 
                 <!-- ФИО -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:text="ФИО"
-                    android:textColor="#718096"
-                    android:textSize="12sp" />
+                    android:textColor="#0281D5"
+                    android:textSize="14sp" />
 
-                <LinearLayout
+                <EditText
+                    android:id="@+id/textFio"
                     android:layout_width="match_parent"
-                    android:layout_height="36dp"
+                    android:layout_height="45dp"
                     android:layout_marginTop="4dp"
-                    android:background="@drawable/edit_text_background"
-                    android:gravity="center_vertical"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp">
-
-
-                    <EditText
-                        android:id="@+id/textFio"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:background="@null"
-                        android:hint="Фамилия Имя"
-                        android:paddingStart="8dp"
-                        android:textSize="14sp" />
-                </LinearLayout>
+                    android:background="@drawable/card_background"
+                    android:hint="Фамилия Имя"
+                    android:paddingStart="16dp"
+                    android:textColorHint="#78999999"
+                    android:textSize="13sp" />
 
                 <!-- Поля для жителей -->
                 <LinearLayout
                     android:id="@+id/residentFieldsLayout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
+                    android:layout_marginTop="12dp"
                     android:orientation="vertical">
-
-                    <!-- Университет -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Университет"
-                        android:textColor="#718096"
-                        android:textSize="12sp" />
-
-                    <Spinner
-                        android:id="@+id/spinnerUniversity"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:layout_marginTop="4dp"
-                        android:background="@drawable/spinner_background"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp" />
 
                     <!-- Факультет -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
                         android:text="Факультет"
-                        android:textColor="#718096"
-                        android:textSize="12sp" />
+                        android:textColor="#0281D5"
+                        android:textSize="14sp" />
 
                     <Spinner
                         android:id="@+id/spinnerFaculty"
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="48dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/spinner_background"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp" />
+                        android:background="@drawable/card_background"
+                        android:paddingStart="16dp" />
 
                     <!-- Общежитие -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="12dp"
                         android:text="Общежитие"
-                        android:textColor="#718096"
-                        android:textSize="12sp" />
+                        android:textColor="#0281D5"
+                        android:textSize="14sp" />
 
                     <Spinner
                         android:id="@+id/spinnerDorm"
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="45dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/spinner_background"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp" />
+                        android:background="@drawable/card_background"
+                        android:paddingStart="13dp" />
 
                     <!-- Комната -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="12dp"
                         android:text="Комната"
-                        android:textColor="#718096"
-                        android:textSize="12sp" />
+                        android:textColor="#0281D5"
+                        android:textSize="14sp" />
 
-                    <LinearLayout
+                    <EditText
+                        android:id="@+id/textRoom"
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="45dp"
                         android:layout_marginTop="4dp"
-                        android:background="@drawable/edit_text_background"
-                        android:gravity="center_vertical"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp">
-
-
-                        <EditText
-                            android:id="@+id/textRoom"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:background="@null"
-                            android:hint="203/2"
-                            android:paddingStart="8dp"
-                            android:textSize="14sp" />
-                    </LinearLayout>
+                        android:background="@drawable/card_background"
+                        android:hint="203/2"
+                        android:paddingStart="16dp"
+                        android:textColorHint="#78999999"
+                        android:textSize="13sp" />
                 </LinearLayout>
             </LinearLayout>
-
-
 
             <!-- Кнопка -->
             <Button
                 android:id="@+id/buttonSubmit"
-                android:layout_width="0dp"
-                android:layout_height="44dp"
-                android:layout_marginStart="20dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginEnd="20dp"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/button_background"
+                style="@style/ButtonTextStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:text="Готово"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp"
+                android:textSize="20sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

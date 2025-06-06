@@ -1,24 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="universities">
-        <item>Выберите университет</item>
-        <item>СВФУ</item>
-    </string-array>
-
     <string-array name="faculties">
-        <item>Выберите факультет</item>
-        <item>ГРФ</item>
-        <item>ФЭИ</item>
-        <item>ИП</item>
-        <item>ИТИ</item>
+        <item>Выберите институт, факультет</item>
         <item>ИМИ</item>
+        <item>ГИ</item>
+        <item>ИТИ</item>
+        <item>ИЗФиР</item>
+        <item>ИП</item>
+        <item>ИФКиС</item>
+        <item>ИЯКН</item>
+        <item>МИ</item>
+        <item>ПИ</item>
+        <item>ФЭИ</item>
+        <item>ФТИ</item>
+        <item>АДФ</item>
+        <item>ГРФ</item>
+        <item>ИФ</item>
+        <item>ФЛФ</item>
+        <item>ЮФ</item>
     </string-array>
 
     <string-array name="dorms">
         <item>Выберите общежитие</item>
-        <item>8//1</item>
-        <item>8//2</item>
-        <item>7//1</item>
-        <item>7//2</item>
+        <item>8/1</item>
+        <item>8/2</item>
+        <item>7/1</item>
+        <item>7/2</item>
+        <item>9/1</item>
+        <item>9/2</item>
+        <item>18</item>
+        <item>17</item>
+        <item>20</item>
+        <item>66Б</item>
+        <item>66В</item>
+        <item>ТИ-1</item>
+        <item>ТИ-2</item>
+        <item>МВО</item>
     </string-array>
 </resources>

@@ -11,21 +11,27 @@
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="124dp"
-        android:fontFamily="sans-serif-light"
-        android:text="Давно не виделись!"
-        android:textSize="28sp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="160dp"
+        android:layout_marginEnd="20dp"
+        android:text="Добро пожаловать!"
+        android:fontFamily="sans-serif-medium"
+        android:textColor="#0281D5"
+        android:textSize="30sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/loginbtn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        style="@style/ButtonTextStyle"
+        android:layout_width="359dp"
+        android:layout_height="55dp"
         android:layout_marginStart="20dp"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="100dp"
         android:layout_marginEnd="20dp"
+        android:background="@drawable/button_background"
+
         android:text="Вход"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -33,16 +39,20 @@
 
     <Button
         android:id="@+id/registerbtn"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        style="@style/ButtonTextStyle"
+        android:layout_width="359dp"
+        android:layout_height="55dp"
         android:layout_marginStart="20dp"
+        android:layout_marginTop="3dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="230dp"
+        android:background="@drawable/button_background_white"
         android:text="Регистрация"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/loginbtn" />
+        app:layout_constraintTop_toBottomOf="@+id/loginbtn"
+        app:layout_constraintVertical_bias="0.121" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

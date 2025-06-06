@@ -57,7 +57,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
         holder.titleView.setText(notice.title);
         holder.messageView.setText(notice.body);
 
-        // Show delete button for admins
+        // Отображения удаления для админа
         holder.deleteButton.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
         holder.deleteButton.setOnClickListener(v -> {
             new AlertDialog.Builder(holder.itemView.getContext())

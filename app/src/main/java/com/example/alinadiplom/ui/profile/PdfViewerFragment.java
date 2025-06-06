@@ -62,7 +62,7 @@ public class PdfViewerFragment extends Fragment {
     }
 
     private void loadPdfFromUrl(String pdfUrl) {
-        trustAllCertificates(); // ⚠️ Временно отключаем SSL проверку
+        trustAllCertificates();
 
         new Thread(() -> {
             try {
