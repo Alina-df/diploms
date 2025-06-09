@@ -2,8 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="blue">#00B4FF</color>
-    <color name="gray">#7E7E7E</color>
+    <color name="blue">#0281D5</color>
+    <color name="gray">#750281D5</color>
     <!-- Основные -->
     <color name="primary">#6200EE</color>
     <color name="primary_dark">#3700B3</color>

@@ -21,8 +21,8 @@
         <!-- Имя пользователя -->
         <ImageView
             android:id="@+id/personPhoto"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="43dp"
+            android:layout_height="43dp"
             android:layout_alignParentStart="true"
             android:layout_marginStart="14dp"
             android:scaleType="centerCrop"
@@ -35,8 +35,9 @@
             android:layout_toEndOf="@id/personPhoto"
             android:layout_marginStart="12dp"
             android:text="Имя Фамилия"
-            android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="#0281D5"/>
 
         <!-- Комната -->
         <TextView
@@ -61,8 +62,9 @@
             android:layout_marginStart="12dp"
             android:layout_marginTop="4dp"
             android:text="Продаю пирожки с картошкой..."
-            android:textSize="14sp"
-            android:textColor="#333" />
+            android:textSize="15sp"
+            android:textColor="#303131"
+            android:fontFamily="sans-serif-medium"/>
 
         <!-- Теги -->
         <TextView

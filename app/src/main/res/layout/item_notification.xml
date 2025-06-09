@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="360dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="12dp"
-    android:layout_gravity="center_horizontal"
-    android:background="@drawable/card_background"
     android:layout_marginVertical="6dp"
+    android:layout_marginHorizontal="12dp"
+    android:background="@drawable/card_background"
     android:elevation="2dp">
 
     <TextView
@@ -22,21 +22,22 @@
         android:id="@+id/titleView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:textColor="#3B82F6"
+        android:textSize="20sp"
+        android:textColor="#0281D5"
         android:layout_marginTop="4dp"
-        android:text="Проверка комнат"/>
+        android:text="Проверка комнат"
+        android:fontFamily="sans-serif-medium"/>
 
     <TextView
         android:id="@+id/messageView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="14sp"
-        android:textColor="#444444"
+        android:textSize="16sp"
+        android:textColor="#303131"
         android:maxLines="2"
         android:ellipsize="end"
         android:layout_marginTop="4dp"
+        android:fontFamily="sans-serif-medium"
         android:text="Уважаемые студенты! На этой неделе
 администрация пройдет с проверкой по комнатам! "/>
 

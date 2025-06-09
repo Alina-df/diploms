@@ -1,136 +1,146 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout
-    android:id="@+id/fragment_container"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragment_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.home.HomeFragment" >
+    android:background="#F5F6FA"
+    tools:context=".ui.home.HomeFragment">
 
+    <!-- Поисковая строка -->
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_margin="8dp"
+        android:layout_height="48dp"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_search_rounded"
         android:queryHint="Поиск"
         app:iconifiedByDefault="false"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-
-    <ImageButton
-        android:id="@+id/addEventButton"
-        android:layout_width="31dp"
-        android:layout_height="34dp"
-        android:contentDescription="Добавить мероприятие"
-        android:src="@android:drawable/ic_input_add"
-        app:layout_constraintBottom_toTopOf="@+id/eventsRecyclerView"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.31"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/searchView"
-        app:layout_constraintVertical_bias="0.0" />
+        android:textColor="#0281D5"
+        android:textColorHint="#7F0281D5"
+        android:fontFamily="sans-serif" />
 
+    <!-- Заголовок "Мероприятия" и кнопка "+" -->
+    <LinearLayout
+        android:id="@+id/eventsHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/searchView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/eventsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Мероприятия"
+            android:textColor="#0281D5"
+            android:textSize="26sp"
+            android:fontFamily="sans-serif-medium" />
+
+        <View
+            android:layout_width="8dp"
+            android:layout_height="1dp"/>
+
+        <ImageButton
+            android:id="@+id/addEventButton"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_button_circle"
+            android:src="@drawable/ic_add_small"
+            android:contentDescription="Добавить мероприятие"
+            app:tint="#0281D5" />
+    </LinearLayout>
+
+    <!-- Горизонтальный список мероприятий -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/eventsRecyclerView"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:clipToPadding="false"
-        android:orientation="horizontal"
-        android:overScrollMode="never"
+        android:layout_height="100dp"
+        android:layout_marginTop="8dp"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintTop_toBottomOf="@id/eventsHeader"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/searchView" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <LinearLayout
+    <!-- Вкладки с симметрией и центральным плюсом -->
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/switchTabs"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:gravity="center"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintTop_toBottomOf="@id/eventsRecyclerView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/eventsRecyclerView">
+        app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Объявления -->
         <TextView
             android:id="@+id/tabNotices"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:text="Объявления"
-            android:textColor="@color/blue"
-            android:textSize="12sp" />
+            android:textColor="#0281D5"
+            android:textSize="26sp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
 
-        <TextView
-            android:id="@+id/tabNotices2"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="@color/blue"
-            android:textSize="12sp" />
-
+        <!-- Плюс между вкладками -->
         <ImageButton
             android:id="@+id/addNoticeButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:background="@drawable/bg_button_circle"
             android:contentDescription="Добавить объявление"
-            android:src="@android:drawable/ic_input_add" />
+            android:src="@drawable/ic_add_small"
+            app:layout_constraintStart_toEndOf="@id/tabNotices"
+            app:layout_constraintEnd_toStartOf="@id/tabPeople"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:tint="#0281D5" />
 
-        <TextView
-            android:id="@+id/tabNotices3"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:textColor="@color/blue"
-            android:textSize="18sp" />
-
+        <!-- Люди -->
         <TextView
             android:id="@+id/tabPeople"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:fontFamily="sans-serif-medium"
             android:gravity="center"
             android:text="Люди"
-            android:textColor="@color/gray"
-            android:textSize="14sp" />
-    </LinearLayout>
+            android:textColor="#B0B0B0"
+            android:textSize="26sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
+    <!-- Список объявлений -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/notificationRecycler"
-        android:layout_width="360dp"
-        android:layout_height="351dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.49"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/switchTabs"
-        app:layout_constraintVertical_bias="0.0" />
-
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="5dp"
-        android:text="Мероприятие"
-        app:layout_constraintBottom_toTopOf="@+id/eventsRecyclerView"
-        app:layout_constraintEnd_toStartOf="@+id/addEventButton"
-        app:layout_constraintHorizontal_bias="1.0"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintTop_toBottomOf="@id/switchTabs"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/searchView"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

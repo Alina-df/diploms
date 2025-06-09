@@ -28,7 +28,7 @@ import java.util.Objects;
 public class RegisterActivity extends AppCompatActivity {
 
     EditText email, password, fio, room, username, phone;
-    Spinner spinnerUniversity, spinnerFaculty, spinnerDorm;
+    Spinner spinnerFaculty, spinnerDorm;
     RadioGroup userTypeRadioGroup;
     Button register;
 
@@ -54,7 +54,6 @@ public class RegisterActivity extends AppCompatActivity {
         room = findViewById(R.id.textRoom);
         username = findViewById(R.id.textUsername);
         phone = findViewById(R.id.textNumber);
-        spinnerUniversity = findViewById(R.id.spinnerUniversity);
         spinnerFaculty = findViewById(R.id.spinnerFaculty);
         spinnerDorm = findViewById(R.id.spinnerDorm);
         register = findViewById(R.id.buttonSubmit);
@@ -99,7 +98,6 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         // Настройка спиннеров
-        setupSpinner(spinnerUniversity, R.array.universities);
         setupSpinner(spinnerFaculty, R.array.faculties);
         setupSpinner(spinnerDorm, R.array.dorms);
 
@@ -154,12 +152,11 @@ public class RegisterActivity extends AppCompatActivity {
         }
 
         if (isResident) {
-            String universityText = spinnerUniversity.getSelectedItem().toString();
             String facultyText = spinnerFaculty.getSelectedItem().toString();
             String dormText = spinnerDorm.getSelectedItem().toString();
             String roomText = room.getText().toString().trim();
 
-            if (roomText.isEmpty() || universityText.contains("Выберите") ||
+            if (roomText.isEmpty() ||
                     facultyText.contains("Выберите") || dormText.contains("Выберите")) {
                 showToast("Заполните все поля жителя");
                 return;
@@ -193,13 +190,11 @@ public class RegisterActivity extends AppCompatActivity {
                     userData.put("uid", uid);
 
                     if (isResident) {
-                        String universityText = spinnerUniversity.getSelectedItem().toString();
                         String facultyText = spinnerFaculty.getSelectedItem().toString();
                         String dormText = spinnerDorm.getSelectedItem().toString();
                         String roomText = room.getText().toString().trim();
 
                         userData.put("role", "resident");
-                        userData.put("university", universityText);
                         userData.put("faculty", facultyText);
                         userData.put("dorm", dormText);
                         userData.put("room", roomText);
