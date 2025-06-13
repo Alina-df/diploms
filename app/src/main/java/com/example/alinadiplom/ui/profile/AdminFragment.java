@@ -21,9 +21,19 @@ public class AdminFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_admin, container, false);
 
         Button buttonResidentRequests = view.findViewById(R.id.buttonResidentRequests);
+        Button ButtonAdminChoose = view.findViewById(R.id.buttonmakeadmin);
+        Button buttonResidentAsk = view.findViewById(R.id.buttonResidentAsk);
         buttonResidentRequests.setOnClickListener(v -> {
             NavHostFragment.findNavController(AdminFragment.this)
                     .navigate(R.id.action_AdminFragment_to_RequestsManagementFragment);
+        });
+        ButtonAdminChoose.setOnClickListener(v -> {
+            NavHostFragment.findNavController(AdminFragment.this)
+                    .navigate(R.id.action_AdminFragment_to_navigation_admin_requests);
+        });
+        buttonResidentAsk.setOnClickListener(v -> {
+            NavHostFragment.findNavController(AdminFragment.this)
+                    .navigate(R.id.action_AdminFragment_to_AskedUsersListFragment);
         });
 
         return view;

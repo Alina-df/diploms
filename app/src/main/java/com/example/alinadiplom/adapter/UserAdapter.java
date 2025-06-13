@@ -14,6 +14,7 @@ import com.example.alinadiplom.R;
 import com.example.alinadiplom.model.UserItem;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.example.alinadiplom.security.CryptoHelper; // импорт дешифратора
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,34 +36,44 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
         filteredList = new ArrayList<>();
     }
 
-    // Добавить всех пользователей и обновить отображаемый список
     public void setUsers(List<UserItem> users) {
         fullList.clear();
-        fullList.addAll(users);
-
-        // Изначально показываем весь список
         filteredList.clear();
-        filteredList.addAll(users);
 
+        for (UserItem u : users) {
+            try {
+                if (u.fio != null && !u.fio.isEmpty()) {
+                    u.fioDecoded = CryptoHelper.decrypt(u.fio);
+                }
+            } catch (Exception e) {
+                u.fioDecoded = u.fio;
+            }
+
+            // 2) Добавляем в списки
+            fullList.add(u);
+            filteredList.add(u);
+        }
         notifyDataSetChanged();
     }
+
 
     // Фильтрация по ФИО (входит ли substring в полный ФИО, регистронезависимо)
     public void filterByFio(String query) {
         filteredList.clear();
         if (query == null || query.trim().isEmpty()) {
-            // Если строка поиска пустая — возвращаем весь список
             filteredList.addAll(fullList);
         } else {
             String lower = query.trim().toLowerCase();
             for (UserItem u : fullList) {
-                if (u.fio != null && u.fio.toLowerCase().contains(lower)) {
+                String cmp = u.fioDecoded != null ? u.fioDecoded : "";
+                if (cmp.toLowerCase().contains(lower)) {
                     filteredList.add(u);
                 }
             }
         }
         notifyDataSetChanged();
     }
+
 
     @NonNull
     @Override
@@ -75,7 +86,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.UserViewHolder
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         UserItem user = filteredList.get(position);
-        holder.tvFio.setText(user.fio != null ? user.fio : "Без имени");
+
+        holder.tvFio.setText(
+                user.fioDecoded != null ? user.fioDecoded : "Без имени"
+        );
         holder.tvRole.setText("Роль: " + (user.role != null ? user.role : "неизвестно"));
 
         // Кнопка "Сделать админом" видна, если роль != "admin"

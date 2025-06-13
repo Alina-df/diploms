@@ -20,6 +20,8 @@ public class RequestsManagementAdapter extends RecyclerView.Adapter<RequestsMana
 
     public interface OnAcceptClickListener {
         void onAccept(ServiceRequest request);
+
+        void onReport(ServiceRequest r);
     }
 
     public RequestsManagementAdapter(List<ServiceRequest> list, OnAcceptClickListener listener) {
@@ -43,7 +45,12 @@ public class RequestsManagementAdapter extends RecyclerView.Adapter<RequestsMana
         holder.type.setText("Тип: " + req.getType());
         holder.status.setText("Статус: " + req.getStatus());
 
+        boolean isPending = "Ожидает обработки".equals(req.getStatus());
+        holder.acceptButton.setVisibility(isPending ? View.VISIBLE : View.GONE);
+        holder.reportButton.setVisibility(isPending ? View.GONE : View.VISIBLE);
+
         holder.acceptButton.setOnClickListener(v -> listener.onAccept(req));
+        holder.reportButton.setOnClickListener(v -> listener.onReport(req));
     }
 
     @Override
@@ -53,15 +60,16 @@ public class RequestsManagementAdapter extends RecyclerView.Adapter<RequestsMana
 
     static class RequestViewHolder extends RecyclerView.ViewHolder {
         TextView room, problem, type, status;
-        Button acceptButton;
+        Button acceptButton, reportButton;
 
         public RequestViewHolder(@NonNull View itemView) {
             super(itemView);
-            room = itemView.findViewById(R.id.textRoomAdmin);
-            problem = itemView.findViewById(R.id.textProblemAdmin);
-            type = itemView.findViewById(R.id.textTypeAdmin);
-            status = itemView.findViewById(R.id.textStatusAdmin);
-            acceptButton = itemView.findViewById(R.id.buttonAcceptRequest);
+            room          = itemView.findViewById(R.id.textRoomAdmin);
+            problem       = itemView.findViewById(R.id.textProblemAdmin);
+            type          = itemView.findViewById(R.id.textTypeAdmin);
+            status        = itemView.findViewById(R.id.textStatusAdmin);
+            acceptButton  = itemView.findViewById(R.id.buttonAcceptRequest);
+            reportButton  = itemView.findViewById(R.id.buttonReportRequest);
         }
     }
 }

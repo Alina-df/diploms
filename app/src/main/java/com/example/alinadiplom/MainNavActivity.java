@@ -5,6 +5,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Toast;
+import android.Manifest;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,8 +24,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class MainNavActivity extends AppCompatActivity {
+    private static final int REQ_POST_NOTIF = 101;
     private static final int STORAGE_PERMISSION_CODE = 100;
 
     private void requestStoragePermission() {
@@ -38,12 +41,11 @@ public class MainNavActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == STORAGE_PERMISSION_CODE) {
-            if (grantResults.length > 0 && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Разрешение на хранение необходимо для сохранения PDF", Toast.LENGTH_SHORT).show();
-            }
+        if (requestCode == REQ_POST_NOTIF) {
         }
     }
     private ActivityMainNavBinding binding;
@@ -53,9 +55,12 @@ public class MainNavActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityMainNavBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        requestNotificationPermission();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestStoragePermission();
         }
+
+
         BottomNavigationView navView = binding.navView;
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(
                 R.id.navigation_home,
@@ -75,6 +80,15 @@ public class MainNavActivity extends AppCompatActivity {
             finish();
             return;
         }
+        FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                String token = task.getResult();
+                FirebaseDatabase.getInstance().getReference("Users")
+                        .child(uid)
+                        .child("fcmToken")
+                        .setValue(token);
+            }
+        });
         navView.setOnItemSelectedListener(item -> {
             getSupportFragmentManager().popBackStackImmediate(null, 0);
 
@@ -84,6 +98,22 @@ public class MainNavActivity extends AppCompatActivity {
         DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid).child("role");
 
     }
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {      // API 33
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+
+                // Покажем системный диалог
+                ActivityCompat.requestPermissions(
+                        this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        REQ_POST_NOTIF
+                );
+            }
+        }
+    }
+
     @Override
     public void onBackPressed() {
         if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
@@ -92,4 +122,5 @@ public class MainNavActivity extends AppCompatActivity {
             super.onBackPressed();
         }
     }
+
 }

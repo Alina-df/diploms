@@ -22,6 +22,7 @@ import com.example.alinadiplom.AuthorChatActivity;
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.model.ChatMessage;
 import com.example.alinadiplom.model.User;
+import com.example.alinadiplom.security.CryptoHelper;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -173,33 +174,43 @@ public class ChatListFragment extends Fragment {
         }
 
         private void loadUserInfo(String userId, TextView nameView, ImageView avatarView) {
-            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference()
-                    .child("users")
+            DatabaseReference userRef = FirebaseDatabase.getInstance()
+                    .getReference("Users")   // <-- заглавная U
                     .child(userId);
 
             userRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    User user = snapshot.getValue(User.class);
-                    if (user != null) {
-                        nameView.setText(user.name);
-                        if (user.avatarUrl != null && !user.avatarUrl.isEmpty()) {
-                            Glide.with(requireContext())
-                                    .load(user.avatarUrl)
-                                    .circleCrop()
-                                    .into(avatarView);
-                        } else {
-                            avatarView.setImageResource(R.drawable.ic_profile);
-                        }
+                    // читаем зашифрованное fio
+                    String encryptedFio = snapshot.child("fio").getValue(String.class);
+                    String displayName = "(неизвестно)";
+                    try {
+                        displayName = CryptoHelper.decrypt(encryptedFio);
+                    } catch (Exception e) {
+                        displayName = (encryptedFio);
+                        Log.e("ChatList", "Ошибка дешифровки ФИО", e);
+                    }
+
+                    nameView.setText(displayName);
+
+                    // аватар
+                    String avatarUrl = snapshot.child("avatarUrl").getValue(String.class);
+                    if (avatarUrl != null && !avatarUrl.isEmpty()) {
+                        Glide.with(requireContext())
+                                .load(avatarUrl)
+                                .circleCrop()
+                                .into(avatarView);
+                    } else {
+                        avatarView.setImageResource(R.drawable.ic_profile);
                     }
                 }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
+                @Override public void onCancelled(@NonNull DatabaseError error) {
                     Log.e("ChatList", "Ошибка загрузки пользователя", error.toException());
                 }
             });
         }
+
 
         @Override
         public int getItemCount() {

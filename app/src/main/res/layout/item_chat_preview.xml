@@ -12,6 +12,7 @@
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:scaleType="centerCrop"
+        android:background="@drawable/ic_profile"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
@@ -22,7 +23,7 @@
         android:layout_height="wrap_content"
         android:ellipsize="end"
         android:maxLines="1"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Subtitle1"
+        android:textColor="@color/blue"
         app:layout_constraintEnd_toStartOf="@+id/chat_time"
         app:layout_constraintStart_toEndOf="@id/chat_avatar"
         app:layout_constraintTop_toTopOf="@id/chat_avatar"/>
@@ -33,7 +34,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Caption"
-        android:textColor="@color/secondary_text"
+        android:textColor="@color/gray"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/chat_name"/>
 
@@ -44,7 +45,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-        android:textColor="@color/secondary_text"
+        android:textColor="@color/gray"
         app:layout_constraintBottom_toBottomOf="@id/chat_avatar"
         app:layout_constraintEnd_toStartOf="@id/chat_unread_badge"
         app:layout_constraintStart_toStartOf="@id/chat_name"

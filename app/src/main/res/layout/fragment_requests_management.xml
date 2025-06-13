@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.profile.RequestsManagementFragment"
-    android:padding="15dp">
+    android:orientation="vertical"
+    android:padding="15dp"
+    tools:context=".ui.profile.RequestsManagementFragment">
 
+    <Spinner
+        android:id="@+id/spinnerFilterType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/service_types"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewServiceRequests"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-</FrameLayout>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="55dp"/>
+
+</LinearLayout>

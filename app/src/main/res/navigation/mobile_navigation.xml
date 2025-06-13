@@ -75,6 +75,11 @@
         android:label="@string/title_admin_requests"
         tools:layout="@layout/fragment_admin_requests" />
     <fragment
+        android:id="@+id/AskedUsersListFragment"
+        android:name="com.example.alinadiplom.ui.profile.AskedUsersListFragment"
+        android:label="@string/title_admin_requests"
+        tools:layout="@layout/fragment_asked_users_list" />
+    <fragment
         android:id="@+id/ChatListFragment"
         android:name="com.example.alinadiplom.ui.home.ChatListFragment"
         android:label="@string/title_admin_requests"
@@ -147,5 +152,8 @@
         <action
             android:id="@+id/action_AdminFragment_to_RequestsManagementFragment"
             app:destination="@id/RequestsManagementFragment" />
+        <action
+            android:id="@+id/action_AdminFragment_to_AskedUsersListFragment"
+            app:destination="@id/AskedUsersListFragment" />
     </fragment>
 </navigation>

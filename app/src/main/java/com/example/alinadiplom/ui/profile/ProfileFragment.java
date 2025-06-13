@@ -15,6 +15,7 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.databinding.FragmentNotificationsBinding; // Исправлено на правильный binding
+import com.example.alinadiplom.security.CryptoHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -57,7 +58,12 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    String fio = snapshot.child("fio").getValue(String.class);
+                    String fio = null;
+                    try {
+                        fio = CryptoHelper.decrypt(snapshot.child("fio").getValue(String.class));
+                    } catch (Exception e) {
+                        fio = (snapshot.child("fio").getValue(String.class));
+                    }
                     String faculty = snapshot.child("faculty").getValue(String.class);
                     String dorm = snapshot.child("dorm").getValue(String.class);
                     String room = snapshot.child("room").getValue(String.class);

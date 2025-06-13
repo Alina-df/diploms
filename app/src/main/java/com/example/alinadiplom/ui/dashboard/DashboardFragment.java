@@ -53,6 +53,7 @@ public class DashboardFragment extends Fragment {
         View root = binding.getRoot();
         spinnerServiceType = root.findViewById(R.id.spinnerServiceType);
         editRoom = root.findViewById(R.id.editRoom);
+        editRoom.setVisibility(View.GONE);
         editProblem = root.findViewById(R.id.editProblem);
         buttonSendService = root.findViewById(R.id.buttonSendService);
         serviceInfo = root.findViewById(R.id.serviceInfo);
@@ -273,43 +274,57 @@ public class DashboardFragment extends Fragment {
 
     /** Отправка запроса на услугу в /serviceRequests */
     private void sendServiceRequest() {
-        String room = editRoom.getText().toString().trim();
         String problem = editProblem.getText().toString().trim();
         String type = spinnerServiceType.getSelectedItem().toString();
 
-        if (room.isEmpty() || problem.isEmpty()) {
-            serviceInfo.setText("Пожалуйста, заполните все поля.");
+        if (problem.isEmpty()) {
+            serviceInfo.setText("Пожалуйста, опишите проблему.");
             return;
         }
 
-        String requestId = FirebaseDatabase.getInstance().getReference()
-                .child("ServiceRequests")
-                .push()
-                .getKey();
-
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid);
 
-        Map<String, Object> requestMap = new HashMap<>();
-        requestMap.put("room", room);
-        requestMap.put("problem", problem);
-        requestMap.put("type", type);
-        requestMap.put("status", "Ожидает обработки");
-        requestMap.put("timestamp", ServerValue.TIMESTAMP);
-        requestMap.put("userId", uid);  // Добавляем пользователя заявки
+        userRef.child("room").get().addOnCompleteListener(task -> {
+            if (!task.isSuccessful() || !task.getResult().exists()) {
+                serviceInfo.setText("Не удалось получить номер комнаты.");
+                return;
+            }
 
-        FirebaseDatabase.getInstance()
-                .getReference("ServiceRequests")
-                .child(requestId)
-                .setValue(requestMap)
-                .addOnSuccessListener(aVoid -> {
-                    serviceInfo.setText("Заявка принята, ожидайте.");
-                    editRoom.setText("");
-                    editProblem.setText("");
-                })
-                .addOnFailureListener(e -> {
-                    serviceInfo.setText("Ошибка отправки: " + e.getMessage());
-                });
+            String room = task.getResult().getValue(String.class);
+            if (room == null || room.isEmpty()) {
+                serviceInfo.setText("Комната не указана в профиле.");
+                return;
+            }
+
+            String requestId = FirebaseDatabase.getInstance().getReference()
+                    .child("ServiceRequests")
+                    .push()
+                    .getKey();
+
+            Map<String, Object> requestMap = new HashMap<>();
+            requestMap.put("room", room);
+            requestMap.put("problem", problem);
+            requestMap.put("type", type);
+            requestMap.put("status", "Ожидает обработки");
+            requestMap.put("timestamp", ServerValue.TIMESTAMP);
+            requestMap.put("userId", uid); // Важно!
+
+            FirebaseDatabase.getInstance()
+                    .getReference("ServiceRequests")
+                    .child(requestId)
+                    .setValue(requestMap)
+                    .addOnSuccessListener(aVoid -> {
+                        serviceInfo.setText("Заявка принята, ожидайте.");
+                        editProblem.setText("");
+                    })
+                    .addOnFailureListener(e -> {
+                        serviceInfo.setText("Ошибка отправки: " + e.getMessage());
+                    });
+
+        });
     }
+
 
     @Override
     public void onDestroyView() {

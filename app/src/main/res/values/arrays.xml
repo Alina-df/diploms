@@ -37,4 +37,10 @@
         <item>ТИ-2</item>
         <item>МВО</item>
     </string-array>
+    <string-array name="service_types" >
+        <item>Все</item>
+        <item>Столяр</item>
+        <item>Сантехник</item>
+        <item>Электрик</item>
+    </string-array>
 </resources>

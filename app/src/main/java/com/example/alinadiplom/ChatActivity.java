@@ -20,6 +20,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.alinadiplom.adapter.ChatAdapter;
 import com.example.alinadiplom.model.ChatMessage;
+import com.example.alinadiplom.security.CryptoHelper;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -31,6 +33,7 @@ import java.util.List;
 
 public class ChatActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
+    private MaterialToolbar materialToolbar;
     private EditText messageInput;
     private ImageButton sendButton;
     private ChatAdapter adapter;
@@ -48,6 +51,44 @@ public class ChatActivity extends AppCompatActivity {
         adId = getIntent().getStringExtra("adId");
         authorId = getIntent().getStringExtra("authorId");
         currentUserId = getIntent().getStringExtra("currentUserId");
+        materialToolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(materialToolbar);
+
+        // Устанавливаем заголовок по умолчанию (можете оставить пустым или задать другое значение)
+        materialToolbar.setTitle("Загрузка...");
+
+        // Включаем кнопку "Назад"
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
+
+        // Загрузка и установка имени пользователя
+        DatabaseReference userRef = FirebaseDatabase.getInstance()
+                .getReference("Users")
+                .child(authorId);
+
+        userRef.child("fullName").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String encryptedName = snapshot.getValue(String.class);
+                if (encryptedName != null) {
+                    try {
+                        String decryptedName = CryptoHelper.decrypt(encryptedName);
+                        // Устанавливаем реальное имя
+                        materialToolbar.setTitle(decryptedName);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        materialToolbar.setTitle("Ошибка");
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                materialToolbar.setTitle("Ошибка загрузки");
+            }
+        });
+
 
         // Инициализация UI
         recyclerView = findViewById(R.id.recycler_chat);

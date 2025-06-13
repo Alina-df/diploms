@@ -3,6 +3,7 @@ package com.example.alinadiplom.model;
 public class UserItem {
     public String uid;
     public String fio;
+    public String fioDecoded;   // читаемое ФИО, заполним в адаптере
     public String email;
     public String username;
     public String phone;

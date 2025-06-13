@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.alinadiplom.LoginActivity;
 import com.example.alinadiplom.R;
+import com.example.alinadiplom.security.CryptoHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -183,10 +184,16 @@ public class RegisterActivity extends AppCompatActivity {
 
                     String uid = Objects.requireNonNull(mAuth.getCurrentUser()).getUid();
                     Map<String, Object> userData = new HashMap<>();
-                    userData.put("email", emailText);
-                    userData.put("fio", fioText);
-                    userData.put("username", usernameText);
-                    userData.put("phone", phoneText);
+                    try {
+                        userData.put("email",    CryptoHelper.encrypt(emailText));
+                        userData.put("fio",      CryptoHelper.encrypt(fioText));
+                        userData.put("username", CryptoHelper.encrypt(usernameText));
+                        userData.put("phone",    CryptoHelper.encrypt(phoneText));
+                    } catch (Exception e) {
+                        showToast("Ошибка шифрования: " + e.getMessage());
+                        return;
+                    }
+
                     userData.put("uid", uid);
 
                     if (isResident) {

@@ -29,6 +29,9 @@
             android:name=".ChatActivity"
             android:exported="false" />
         <activity
+            android:name=".ChatWithAdminActivity"
+            android:exported="false" />
+        <activity
             android:name=".AddEventActivity"
             android:exported="false" />
         <activity

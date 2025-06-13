@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+import com.example.alinadiplom.security.CryptoHelper;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -41,10 +42,8 @@ public class LoginActivity extends AppCompatActivity {
             }
 
             if (loginText.contains("@")) {
-                // Пользователь ввёл email — пытаемся войти напрямую
                 signInWithEmail(loginText, passText);
             } else {
-                // Пользователь ввёл логин (username) — ищем email по логину
                 mDatabase.child("usernames").child(loginText).get()
                         .addOnCompleteListener(task -> {
                             if (!task.isSuccessful()) {
@@ -52,17 +51,21 @@ public class LoginActivity extends AppCompatActivity {
                             } else {
                                 if (task.getResult().exists()) {
                                     String uid = task.getResult().getValue(String.class);
-                                    // Получаем email по uid
                                     mDatabase.child("Users").child(uid).child("email").get()
                                             .addOnCompleteListener(emailTask -> {
                                                 if (!emailTask.isSuccessful() || emailTask.getResult() == null) {
                                                     Toast.makeText(this, "Ошибка получения email", Toast.LENGTH_SHORT).show();
                                                 } else {
-                                                    String email = emailTask.getResult().getValue(String.class);
-                                                    if (email == null || email.isEmpty()) {
+                                                    String encryptedEmail = emailTask.getResult().getValue(String.class);
+                                                    if (encryptedEmail == null || encryptedEmail.isEmpty()) {
                                                         Toast.makeText(this, "Email не найден", Toast.LENGTH_SHORT).show();
                                                     } else {
-                                                        signInWithEmail(email, passText);
+                                                        try {
+                                                            String decryptedEmail = CryptoHelper.decrypt(encryptedEmail);
+                                                            signInWithEmail(decryptedEmail, passText);
+                                                        } catch (Exception e) {
+                                                            signInWithEmail(encryptedEmail, passText);;
+                                                        }
                                                     }
                                                 }
                                             });
@@ -71,6 +74,7 @@ public class LoginActivity extends AppCompatActivity {
                                 }
                             }
                         });
+
             }
         });
     }

@@ -2,6 +2,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
+    android:layout_margin="20dp"
+    android:background="@drawable/card_background"
     android:padding="12dp">
 
     <TextView android:id="@+id/textRoomAdmin"
@@ -21,8 +23,16 @@
         android:layout_height="wrap_content"
         android:textColor="@android:color/holo_blue_dark"/>
 
-    <Button android:id="@+id/buttonAcceptRequest"
+    <Button
+        android:id="@+id/buttonAcceptRequest"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Принять заявку"/>
+        android:text="Принять" />
+
+    <Button
+        android:id="@+id/buttonReportRequest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Отчёт"
+        android:visibility="gone" />
 </LinearLayout>

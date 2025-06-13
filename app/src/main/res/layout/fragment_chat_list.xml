@@ -15,6 +15,7 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            app:titleTextColor="@color/gray"
             app:title="@string/chats_title"/>
 
     </com.google.android.material.appbar.AppBarLayout>
@@ -26,8 +27,7 @@
         android:clipToPadding="false"
         android:paddingTop="?attr/actionBarSize"
         android:paddingBottom="16dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
-
+     />
     <TextView
         android:id="@+id/text_empty_chats"
         android:layout_width="match_parent"
