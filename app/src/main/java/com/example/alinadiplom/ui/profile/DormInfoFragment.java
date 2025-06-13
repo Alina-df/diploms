@@ -8,22 +8,34 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-
+import android.widget.TextView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.*;
 import com.example.alinadiplom.R;
 
 public class DormInfoFragment extends Fragment {
-
-    // ... существующий код ...
+    private FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+    private String uid;
+    private TextView textFloorRoom, textRoomType, textNeighbors;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_dorm_info, container, false);
+        textFloorRoom = view.findViewById(R.id.text_name);
+        textRoomType = view.findViewById(R.id.text_room);
+        textNeighbors = view.findViewById(R.id.text_neighbors);
 
-        // Инициализация кнопок
-        Button btnDormRegulations = view.findViewById(R.id.btn_dorm_regulations);
-        Button btnDormitoryRegulations = view.findViewById(R.id.btn_dormitory_regulations);
+        TextView btnDormRegulations = view.findViewById(R.id.btn_dorm_regulations);
+        TextView btnDormitoryRegulations = view.findViewById(R.id.btn_dormitory_regulations);
+        mAuth = FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
 
+        if (mAuth.getCurrentUser() != null) {
+            uid = mAuth.getCurrentUser().getUid();
+            loadDormInfo();
+        }
         // Обработчики кликов
         btnDormRegulations.setOnClickListener(v -> openPdfFragment(
                 "Положение о студгородке",
@@ -36,6 +48,45 @@ public class DormInfoFragment extends Fragment {
         ));
 
         return view;
+    }
+    private void loadDormInfo() {
+        mDatabase.child("Users").child(uid).get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                String dorm = snapshot.child("dorm").getValue(String.class);
+                String room = snapshot.child("room").getValue(String.class);
+
+                // Устанавливаем этаж/номер
+                textFloorRoom.setText(dorm + ", " + room);
+
+                // Получаем соседей по комнате
+                if (dorm != null && room != null) {
+                    String roomKey = room.replace("/", "\\");
+                    mDatabase.child("rooms").child(dorm).child(roomKey).child("residents")
+                            .get().addOnSuccessListener(residentSnap -> {
+                                StringBuilder neighbors = new StringBuilder();
+                                for (DataSnapshot resident : residentSnap.getChildren()) {
+                                    String fio = resident.getValue(String.class);
+                                    if (!resident.getKey().equals(uid)) { // исключаем самого себя
+                                        neighbors.append(fio).append(", ");
+                                    }
+                                }
+
+                                if (neighbors.length() > 2) {
+                                    neighbors.setLength(neighbors.length() - 2); // убираем последнюю запятую
+                                }
+
+                                textNeighbors.setText(neighbors.toString());
+                            });
+                }
+            }
+        });
+
+        // (по желанию) Подгрузи тип комнаты
+        mDatabase.child("Users").child(uid).child("roomType").get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                textRoomType.setText(snapshot.getValue(String.class));
+            }
+        });
     }
 
     private void openPdfFragment(String title, String pdfUrl) {

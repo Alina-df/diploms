@@ -8,14 +8,21 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.databinding.FragmentDashboardBinding;
+import com.example.alinadiplom.utils.NotificationHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.*;
 
@@ -28,7 +35,14 @@ public class DashboardFragment extends Fragment {
     private LaundryManager laundryManager;
     private RoomDataManager roomDataManager;
     private FirebaseAuth mAuth;
+
+    private ChildEventListener notificationListener;
+
     private String myUid;
+    private Spinner spinnerServiceType;
+    private EditText editRoom, editProblem;
+    Button buttonSendService, buttonMyRequests;
+    private TextView serviceInfo;
     private ValueEventListener laundryListener;
 
     @Override
@@ -37,8 +51,11 @@ public class DashboardFragment extends Fragment {
                              Bundle savedInstanceState) {
         binding = FragmentDashboardBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
-
-        // 1. Авторизация
+        spinnerServiceType = root.findViewById(R.id.spinnerServiceType);
+        editRoom = root.findViewById(R.id.editRoom);
+        editProblem = root.findViewById(R.id.editProblem);
+        buttonSendService = root.findViewById(R.id.buttonSendService);
+        serviceInfo = root.findViewById(R.id.serviceInfo);
         mAuth = FirebaseAuth.getInstance();
         myUid = mAuth.getCurrentUser() != null
                 ? mAuth.getCurrentUser().getUid()
@@ -47,8 +64,19 @@ public class DashboardFragment extends Fragment {
             Toast.makeText(getContext(), "Пользователь не авторизован", Toast.LENGTH_SHORT).show();
             return root;
         }
+        buttonMyRequests = root.findViewById(R.id.buttonMyRequests);
+        buttonMyRequests.setOnClickListener(v -> {
+            NavHostFragment.findNavController(DashboardFragment.this)
+                    .navigate(R.id.action_dashboard_to_myRequests);
+        });
 
-        // 2. RoomDataManager: загрузка комнаты и соседей
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                getContext(), android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"Сантехник", "Столяр", "Электрик"}
+        );
+        spinnerServiceType.setAdapter(adapter);
+
+        buttonSendService.setOnClickListener(v -> sendServiceRequest());
         DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users");
         DatabaseReference roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
         roomDataManager = new RoomDataManager(usersRef, roomsRef);
@@ -94,7 +122,28 @@ public class DashboardFragment extends Fragment {
 
         // 4. Обработка отправки запроса на услугу
         binding.buttonSendService.setOnClickListener(v -> sendServiceRequest());
+        DatabaseReference notiRef = FirebaseDatabase.getInstance()
+                .getReference("UserNotifications")
+                .child(myUid);
 
+        notiRef.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                if (!isAdded()) return;
+
+                String title = snapshot.child("title").getValue(String.class);
+                String message = snapshot.child("message").getValue(String.class);
+
+                NotificationHelper.showLocalNotification(requireContext(), title, message);
+
+                snapshot.getRef().removeValue(); // удаляем уведомление из Firebase
+            }
+
+            @Override public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {}
+            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
+            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {}
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
+        });
         return root;
     }
 
@@ -224,40 +273,42 @@ public class DashboardFragment extends Fragment {
 
     /** Отправка запроса на услугу в /serviceRequests */
     private void sendServiceRequest() {
-        String room = binding.editRoom.getText().toString().trim();
-        String problem = binding.editProblem.getText().toString().trim();
+        String room = editRoom.getText().toString().trim();
+        String problem = editProblem.getText().toString().trim();
+        String type = spinnerServiceType.getSelectedItem().toString();
 
-        if (TextUtils.isEmpty(room)) {
-            Toast.makeText(getContext(), "Укажите номер комнаты", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        if (TextUtils.isEmpty(problem)) {
-            Toast.makeText(getContext(), "Опишите проблему", Toast.LENGTH_SHORT).show();
+        if (room.isEmpty() || problem.isEmpty()) {
+            serviceInfo.setText("Пожалуйста, заполните все поля.");
             return;
         }
 
-        long timestamp = System.currentTimeMillis();
-        DatabaseReference ref = FirebaseDatabase.getInstance()
-                .getReference("serviceRequests")
-                .push();
+        String requestId = FirebaseDatabase.getInstance().getReference()
+                .child("ServiceRequests")
+                .push()
+                .getKey();
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("userId", myUid);
-        data.put("room", room);
-        data.put("problem", problem);
-        data.put("timestamp", timestamp);
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        ref.setValue(data)
+        Map<String, Object> requestMap = new HashMap<>();
+        requestMap.put("room", room);
+        requestMap.put("problem", problem);
+        requestMap.put("type", type);
+        requestMap.put("status", "Ожидает обработки");
+        requestMap.put("timestamp", ServerValue.TIMESTAMP);
+        requestMap.put("userId", uid);  // Добавляем пользователя заявки
+
+        FirebaseDatabase.getInstance()
+                .getReference("ServiceRequests")
+                .child(requestId)
+                .setValue(requestMap)
                 .addOnSuccessListener(aVoid -> {
-                    binding.serviceInfo.setText("Запрос отправлен");
-                    binding.editRoom.setText("");
-                    binding.editProblem.setText("");
+                    serviceInfo.setText("Заявка принята, ожидайте.");
+                    editRoom.setText("");
+                    editProblem.setText("");
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(getContext(),
-                                "Ошибка отправки: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show()
-                );
+                .addOnFailureListener(e -> {
+                    serviceInfo.setText("Ошибка отправки: " + e.getMessage());
+                });
     }
 
     @Override
@@ -266,8 +317,18 @@ public class DashboardFragment extends Fragment {
         if (laundryListener != null) {
             laundryManager.removeStatusListener(laundryListener);
         }
+
+        // Удаление уведомлений
+        DatabaseReference notiRef = FirebaseDatabase.getInstance()
+                .getReference("UserNotifications")
+                .child(myUid);
+        if (notificationListener != null) {
+            notiRef.removeEventListener(notificationListener);
+        }
+
         laundryManager.cleanup();
         roomDataManager.cleanup();
         binding = null;
     }
+
 }

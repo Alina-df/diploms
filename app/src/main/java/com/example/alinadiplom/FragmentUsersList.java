@@ -64,10 +64,8 @@ public class FragmentUsersList extends Fragment {
         // Ссылка на ветку "Users"
         usersRef = FirebaseDatabase.getInstance().getReference("Users");
 
-        // Загружаем всех пользователей
         loadAllUsers();
 
-        // Вешаем TextWatcher на EditText для поиска
         editSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -76,7 +74,6 @@ public class FragmentUsersList extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // каждый раз, когда меняется текст, фильтруем
                 adapter.filterByFio(s.toString());
             }
 

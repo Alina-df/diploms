@@ -20,14 +20,14 @@
         <item>ЮФ</item>
     </string-array>
 
-    <string-array name="dorms">
+    <string-array name="dorms" >
         <item>Выберите общежитие</item>
-        <item>8/1</item>
-        <item>8/2</item>
-        <item>7/1</item>
-        <item>7/2</item>
-        <item>9/1</item>
-        <item>9/2</item>
+        <item>8\\1</item>
+        <item>8\\2</item>
+        <item>7\\1</item>
+        <item>7\\2</item>
+        <item>9\\1</item>
+        <item>9\\2</item>
         <item>18</item>
         <item>17</item>
         <item>20</item>

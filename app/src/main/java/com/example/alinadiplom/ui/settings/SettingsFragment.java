@@ -5,63 +5,41 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Toast;
 
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
+import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.alinadiplom.R;
-import com.google.firebase.auth.FirebaseAuth;
 
 public class SettingsFragment extends Fragment {
 
-    private EditText etNewPassword;
-    private Button btnSavePassword, logoutButton;
-    private SwitchCompat switchAnnouncements, switchEvents, switchPush;
-    private FirebaseAuth mAuth;
+    private Button btnNotifications, btnAccount, btnDormitory, btnHelp;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        // Инициализация виджетов
-        etNewPassword = view.findViewById(R.id.etNewPassword);
-        btnSavePassword = view.findViewById(R.id.btnSavePassword);
-        switchAnnouncements = view.findViewById(R.id.switch_announcements);
-        switchEvents = view.findViewById(R.id.switch_events);
-        switchPush = view.findViewById(R.id.switch_push);
-        logoutButton = view.findViewById(R.id.logoutButton);
+        btnNotifications = view.findViewById(R.id.btnSettingsNotifications);
+        btnAccount = view.findViewById(R.id.btnSettingsAccount);
+        btnDormitory = view.findViewById(R.id.btnSettingsDormitory);
+        btnHelp = view.findViewById(R.id.btnSettingsHelp);
 
-        // Инициализация Firebase
-        mAuth = FirebaseAuth.getInstance();
+        // Переход к уведомлениям
+        btnNotifications.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_settingsFragment_to_NotificationsSettingsFragment));
 
-        // Обработка сохранения нового пароля
-        btnSavePassword.setOnClickListener(v -> {
-            String newPassword = etNewPassword.getText().toString().trim();
-            if (newPassword.length() < 6) {
-                Toast.makeText(getContext(), "Пароль должен быть не менее 6 символов", Toast.LENGTH_SHORT).show();
-                return;
-            }
+        // Переход к аккаунту
+        btnAccount.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_settingsFragment_to_AccountSettingsFragment));
 
-            mAuth.getCurrentUser().updatePassword(newPassword)
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(getContext(), "Пароль изменен", Toast.LENGTH_SHORT).show();
-                            etNewPassword.setText("");
-                        } else {
-                            Toast.makeText(getContext(), "Ошибка: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                        }
-                    });
-        });
+        // Переход к общежитию (у тебя уже есть)
+        btnDormitory.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_settingsFragment_to_DormInfoFragment));
 
-        // Обработка выхода (как в вашем NotificationsFragment)
-        logoutButton.setOnClickListener(v -> {
-            mAuth.signOut();
-            getActivity().finish();
-        });
+        // Переход к помощи
+        btnHelp.setOnClickListener(v ->
+                NavHostFragment.findNavController(this).navigate(R.id.action_settingsFragment_to_HelpFragment));
 
-        // Переключатели можно дополнить логикой позже
         return view;
     }
 }

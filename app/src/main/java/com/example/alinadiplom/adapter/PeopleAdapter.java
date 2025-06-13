@@ -51,12 +51,33 @@ public class PeopleAdapter extends RecyclerView.Adapter<PeopleAdapter.PersonView
     public void onBindViewHolder(@NonNull PersonViewHolder holder, int position) {
         Notice notice = notices.get(position);
 
+        // Изначально показываем текущие значения
         holder.name.setText(notice.userName != null ? notice.userName : "Неизвестный пользователь");
         holder.room.setText(notice.room != null ? notice.room : "");
         holder.message.setText(notice.body != null ? notice.body : "");
         holder.tags.setText(notice.tags != null ? notice.tags : "");
         holder.avatar.setImageResource(R.drawable.circle_progress);
         holder.deleteButton.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+
+        // Проверка и обновление имени пользователя из базы
+        if (notice.userId != null && !notice.userId.isEmpty()) {
+            DatabaseReference userRef = FirebaseDatabase.getInstance()
+                    .getReference("Users")
+                    .child(notice.userId)
+                    .child("fio");
+
+            userRef.get().addOnSuccessListener(dataSnapshot -> {
+                if (dataSnapshot.exists()) {
+                    String updatedName = dataSnapshot.getValue(String.class);
+                    if (updatedName != null && !updatedName.equals(notice.userName)) {
+                        // Обновляем имя в notice и UI
+                        notice.userName = updatedName;
+                        holder.name.setText(updatedName);
+                    }
+                }
+            }).addOnFailureListener(e -> Log.e(TAG, "Ошибка при получении имени: " + e.getMessage()));
+        }
+
         holder.deleteButton.setOnClickListener(v -> {
             new AlertDialog.Builder(holder.itemView.getContext())
                     .setTitle("Удалить объявление")
@@ -67,8 +88,7 @@ public class PeopleAdapter extends RecyclerView.Adapter<PeopleAdapter.PersonView
                                 .getReference("notices")
                                 .child(notice.id);
                         noticeRef.removeValue()
-                                .addOnSuccessListener(aVoid ->
-                                        Log.d(TAG, "Deleted notice: " + notice.id))
+                                .addOnSuccessListener(aVoid -> Log.d(TAG, "Deleted notice: " + notice.id))
                                 .addOnFailureListener(e -> {
                                     Toast.makeText(holder.itemView.getContext(),
                                             "Ошибка удаления: " + e.getMessage(),
@@ -79,7 +99,6 @@ public class PeopleAdapter extends RecyclerView.Adapter<PeopleAdapter.PersonView
                     .setNegativeButton("Отмена", (dialog, which) -> dialog.dismiss())
                     .show();
         });
-
 
         holder.itemView.setOnClickListener(v -> {
             Bundle bundle = new Bundle();
@@ -95,6 +114,7 @@ public class PeopleAdapter extends RecyclerView.Adapter<PeopleAdapter.PersonView
             navController.navigate(R.id.action_home_to_person, bundle);
         });
     }
+
 
     @Override
     public int getItemCount() {

@@ -1,0 +1,14 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/rounded_background"
+    android:layout_marginBottom="8dp">
+
+    <TextView android:id="@+id/textType" android:textSize="16sp" android:layout_height="wrap_content" android:layout_width="match_parent"/>
+    <TextView android:id="@+id/textProblem" android:textSize="14sp" android:layout_height="wrap_content" android:layout_width="match_parent"/>
+    <TextView android:id="@+id/textRoom" android:textSize="14sp" android:layout_height="wrap_content" android:layout_width="match_parent"/>
+    <TextView android:id="@+id/textStatus" android:textSize="14sp" android:layout_height="wrap_content" android:layout_width="match_parent"/>
+    <TextView android:id="@+id/textTime" android:textSize="12sp" android:textColor="#888888" android:layout_height="wrap_content" android:layout_width="match_parent"/>
+</LinearLayout>

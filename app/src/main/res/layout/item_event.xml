@@ -1,19 +1,27 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="100dp"
-    android:layout_height="180dp"
-    android:orientation="vertical"
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="80dp"
+    android:layout_height="140dp"
     android:layout_marginEnd="8dp"
-    android:background="@drawable/ic_event_background"
     android:elevation="4dp"
-    android:padding="8dp">
+    card_view:cardCornerRadius="12dp">
 
-    <TextView
-        android:id="@+id/eventTitle"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Название"
-        android:textColor="@android:color/white"
-        android:textSize="14sp"
-        android:paddingTop="8dp" />
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/ic_event_background"
+        android:padding="8dp">
+
+        <TextView
+            android:id="@+id/eventTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Название"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:paddingTop="8dp" />
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

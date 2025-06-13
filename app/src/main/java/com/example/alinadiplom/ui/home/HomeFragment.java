@@ -89,7 +89,6 @@ public class HomeFragment extends Fragment {
                     String role = snapshot.getValue(String.class);
                     isAdmin = "admin".equals(role);
                     Log.d(TAG, "User is admin: " + isAdmin);
-
                     // Пересоздаем адаптеры с учётом isAdmin
                     notificationAdapter = new NotificationAdapter(adminNotices, isAdmin);
                     peopleAdapter = new PeopleAdapter(peopleNotices, isAdmin);
@@ -150,6 +149,9 @@ public class HomeFragment extends Fragment {
         });
 
         ImageButton addEventBtn = root.findViewById(R.id.addEventButton);
+        if (isAdmin){
+            addEventBtn.setVisibility(View.VISIBLE);
+        }
         addEventBtn.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), AddEventActivity.class));
         });

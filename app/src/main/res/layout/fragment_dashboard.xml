@@ -14,7 +14,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="55dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -146,6 +147,12 @@
                 android:text="Запрос на услугу"
                 android:textSize="18sp"
                 android:textStyle="bold"/>
+            <Spinner
+                android:id="@+id/spinnerServiceType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:spinnerMode="dropdown" />
 
             <EditText
                 android:id="@+id/editRoom"
@@ -171,7 +178,12 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:text="Отправить запрос"/>
-
+            <Button
+                android:id="@+id/buttonMyRequests"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Мои заявки"/>
             <TextView
                 android:id="@+id/serviceInfo"
                 android:layout_width="wrap_content"

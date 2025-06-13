@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.profile.AdminFragment">
+
+    <LinearLayout
+        android:layout_marginTop="55dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="15dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/buttonResidentRequests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button_background"
+            android:textColor="@color/blue"
+            android:text="Заявки"
+            android:layout_marginBottom="20dp"/>
+
+        <Button
+            android:id="@+id/buttonResidentAsk"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button_background"
+            android:textColor="@color/blue"
+            android:text="Вопросы"
+            android:layout_marginBottom="20dp"/>
+
+        <Button
+            android:id="@+id/buttonmakeadmin"
+            android:layout_width="match_parent"
+            android:background="@drawable/button_background"
+            android:textColor="@color/blue"
+            android:layout_height="wrap_content"
+            android:text="Назначение"
+            android:layout_marginBottom="20dp"/>
+    </LinearLayout>
+</FrameLayout>

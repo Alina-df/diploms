@@ -25,8 +25,8 @@
 
     <LinearLayout
         android:id="@+id/linearLayout7"
-        android:layout_width="359dp"
-        android:layout_height="55dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="12dp"
         android:layout_marginEnd="20dp"
@@ -38,7 +38,7 @@
 
         <EditText
             android:id="@+id/editPass"
-            android:layout_width="359dp"
+            android:layout_width="match_parent"
             android:layout_height="55dp"
             android:background="@drawable/button_background_white"
             android:hint="Введите пароль"
@@ -66,8 +66,8 @@
 
     <LinearLayout
         android:id="@+id/linearLayout2"
-        android:layout_width="359dp"
-        android:layout_height="55dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="104dp"
         android:layout_marginEnd="20dp"
@@ -79,7 +79,7 @@
 
         <EditText
             android:id="@+id/editNumber"
-            android:layout_width="359dp"
+            android:layout_width="match_parent"
             android:layout_height="55dp"
             android:background="@drawable/button_background_white"
             android:hint="Введите логин или email"

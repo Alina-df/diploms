@@ -5,21 +5,115 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="16dp">
-
-    <Button
-        android:id="@+id/btn_dorm_regulations"
+    <TextView
+        android:id="@+id/text_general_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Положение о студенческом общежитии"
-        android:drawableStart="@drawable/ic_pdf"
-        android:drawablePadding="8dp"
-        android:layout_marginBottom="16dp"/>
-
-    <Button
-        android:id="@+id/btn_dormitory_regulations"
+        android:text="Общая информация об общежитии"
+        android:textStyle="bold"
+        android:textSize="16sp"/>
+    <!-- Блок общей информации -->
+    <LinearLayout
+        android:id="@+id/layout_general_info"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Положение об общежитии"
-        android:drawableStart="@drawable/ic_pdf"
-        android:drawablePadding="8dp"/>
+        android:background="@drawable/background_white"
+        android:orientation="vertical"
+        android:paddingBottom="16dp"
+        android:layout_marginBottom="40dp">
+
+
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_personal_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Моя информация"
+        android:textStyle="bold"
+        android:textSize="16sp"/>
+    <LinearLayout
+        android:id="@+id/layout_personal_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/background_white"
+        android:orientation="vertical"
+        android:paddingBottom="16dp"
+        android:layout_marginBottom="40dp"
+        android:padding="15dp">
+
+
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#7C7A7AB2"
+            android:text="ЭТАЖ, НОМЕР КОМНАТЫ"/>
+
+        <TextView
+            android:id="@+id/text_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="2, 205"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#7C7A7AB2"
+            android:text="КОМНАТА"/>
+
+        <TextView
+            android:id="@+id/text_room"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Двухместная"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#7C7A7AB2"
+            android:text="СОСЕДИ"/>
+        <TextView
+            android:id="@+id/text_neighbors"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Иван Петров, Олег Смирнов"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/text_document_info"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Документы"
+        android:textStyle="bold"
+        android:textSize="16sp"/>
+    <LinearLayout
+        android:id="@+id/layout_documents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/background_white"
+        android:layout_gravity="bottom"
+        android:padding="15dp">
+
+        <TextView
+            android:id="@+id/btn_dorm_regulations"
+            android:clickable="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Положение о студенческом общежитии"
+            android:textColor="@color/blue"
+            android:drawablePadding="8dp"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/btn_dormitory_regulations"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:textColor="@color/blue"
+            android:text="Положение об общежитии"
+            android:paddingBottom="20dp"/>
+    </LinearLayout>
+
 </LinearLayout>

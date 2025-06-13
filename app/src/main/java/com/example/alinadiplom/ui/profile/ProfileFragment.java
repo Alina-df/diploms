@@ -38,12 +38,10 @@ public class ProfileFragment extends Fragment {
         View root = binding.getRoot();
 
         tvFio = binding.tvFio;
-        tvUniversity = binding.tvUniversity;
         tvFaculty = binding.tvFaculty;
-        tvDorm = binding.tvDorm;
+        tvDorm = binding.tvDormName;
         tvRoom = binding.tvRoom;
         btnSettings = binding.btnSettings;
-        btnDormInfo = binding.btnDormInfo;
         btnAdminRequest = binding.btnAdminRequest;
 
         mAuth = FirebaseAuth.getInstance();
@@ -60,13 +58,11 @@ public class ProfileFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
                     String fio = snapshot.child("fio").getValue(String.class);
-                    String university = snapshot.child("university").getValue(String.class);
                     String faculty = snapshot.child("faculty").getValue(String.class);
                     String dorm = snapshot.child("dorm").getValue(String.class);
                     String room = snapshot.child("room").getValue(String.class);
 
                     tvFio.setText(fio != null ? fio : "Не указано");
-                    tvUniversity.setText(university != null ? university : "Не указано");
                     tvFaculty.setText(faculty != null ? faculty : "Не указано");
                     tvDorm.setText(dorm != null ? dorm : "Не указано");
                     tvRoom.setText(room != null ? room : "Не указано");
@@ -90,11 +86,8 @@ public class ProfileFragment extends Fragment {
         btnSettings.setOnClickListener(v -> {
             NavHostFragment.findNavController(this).navigate(R.id.action_profile_to_settings);
         });
-        btnDormInfo.setOnClickListener(v -> {
-            NavHostFragment.findNavController(this).navigate(R.id.action_navigation_profile_to_DormInfoFragment);
-        });
         btnAdminRequest.setOnClickListener(v -> {
-            NavHostFragment.findNavController(this).navigate(R.id.action_navigation_profile_to_navigation_admin_requests); // если у тебя есть фрагмент для запросов админа
+            NavHostFragment.findNavController(this).navigate(R.id.action_navigation_profile_to_AdminFragment);
         });
 
         return root;

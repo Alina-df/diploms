@@ -54,6 +54,7 @@
 
         <ImageButton
             android:id="@+id/addEventButton"
+            android:visibility="gone"
             android:layout_width="28dp"
             android:layout_height="28dp"
             android:background="@drawable/bg_button_circle"
@@ -66,7 +67,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/eventsRecyclerView"
         android:layout_width="0dp"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
@@ -138,7 +139,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="55dp"
         app:layout_constraintTop_toBottomOf="@id/switchTabs"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
