@@ -1,20 +1,13 @@
 package com.example.alinadiplom;
 
 import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -39,6 +32,8 @@ public class ChatActivity extends AppCompatActivity {
     private ChatAdapter adapter;
     private ValueEventListener messagesListener;
     private DatabaseReference messagesRef;
+    private DatabaseReference usersRef;
+
     private String currentUserId;
     private String adId, authorId;
 
@@ -51,35 +46,68 @@ public class ChatActivity extends AppCompatActivity {
         adId = getIntent().getStringExtra("adId");
         authorId = getIntent().getStringExtra("authorId");
         currentUserId = getIntent().getStringExtra("currentUserId");
+
         materialToolbar = findViewById(R.id.toolbar);
         setSupportActionBar(materialToolbar);
 
-        // Устанавливаем заголовок по умолчанию (можете оставить пустым или задать другое значение)
         materialToolbar.setTitle("Загрузка...");
 
-        // Включаем кнопку "Назад"
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setTitle("Чат"); // Можно позже менять динамически
         }
 
-        // Загрузка и установка имени пользователя
-        DatabaseReference userRef = FirebaseDatabase.getInstance()
-                .getReference("Users")
-                .child(authorId);
+        // Ссылка на пользователей
+        usersRef = FirebaseDatabase.getInstance().getReference("Users");
 
-        userRef.child("fullName").addListenerForSingleValueEvent(new ValueEventListener() {
+        // Изначально показываем имя автора (собеседника)
+        loadUserNameIntoToolbar(authorId);
+
+        // UI
+        recyclerView = findViewById(R.id.recycler_chat);
+        messageInput = findViewById(R.id.edit_message);
+        sendButton = findViewById(R.id.button_send);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new ChatAdapter(currentUserId);
+        recyclerView.setAdapter(adapter);
+
+        // Ссылка на сообщения (по объявлению и текущему пользователю)
+        messagesRef = FirebaseDatabase.getInstance().getReference()
+                .child("messages")
+                .child(adId)
+                .child(currentUserId);
+
+        // Загрузка сообщений + слушатель
+        setupMessageListener();
+
+        // Отправка сообщений
+        sendButton.setOnClickListener(v -> {
+            String text = messageInput.getText().toString().trim();
+            if (!text.isEmpty()) {
+                sendMessage(text);
+                messageInput.setText("");
+            }
+        });
+    }
+
+    private void loadUserNameIntoToolbar(String userId) {
+        usersRef.child(userId).child("fio").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String encryptedName = snapshot.getValue(String.class);
                 if (encryptedName != null) {
                     try {
                         String decryptedName = CryptoHelper.decrypt(encryptedName);
-                        // Устанавливаем реальное имя
                         materialToolbar.setTitle(decryptedName);
+                        Log.d("ToolbarDebug", "Заголовок установлен: " + decryptedName);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        materialToolbar.setTitle("Ошибка");
+                        materialToolbar.setTitle(encryptedName);
                     }
+                } else {
+                    materialToolbar.setTitle("Пользователь");
                 }
             }
 
@@ -88,55 +116,8 @@ public class ChatActivity extends AppCompatActivity {
                 materialToolbar.setTitle("Ошибка загрузки");
             }
         });
-
-
-        // Инициализация UI
-        recyclerView = findViewById(R.id.recycler_chat);
-        messageInput = findViewById(R.id.edit_message);
-        sendButton = findViewById(R.id.button_send);
-
-        // Настройка RecyclerView
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new ChatAdapter(currentUserId);
-        recyclerView.setAdapter(adapter);
-
-        // Ссылка на сообщения текущего пользователя
-        messagesRef = FirebaseDatabase.getInstance().getReference()
-                .child("messages")
-                .child(adId)
-                .child(currentUserId);
-
-        // Загрузка сообщений
-        messagesRef.orderByChild("timestamp").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                List<ChatMessage> messages = new ArrayList<>();
-                for (DataSnapshot data : snapshot.getChildren()) {
-                    ChatMessage message = data.getValue(ChatMessage.class);
-                    if (message != null) {
-                        messages.add(message);
-                    }
-                }
-                adapter.setMessages(messages);
-                recyclerView.scrollToPosition(adapter.getItemCount() - 1);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(ChatActivity.this, "Ошибка загрузки: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // Отправка сообщения
-        sendButton.setOnClickListener(v -> {
-            String text = messageInput.getText().toString().trim();
-            if (!text.isEmpty()) {
-                sendMessage(text);
-                messageInput.setText("");
-            }
-        });
-        setupMessageListener();
     }
+
     private void setupMessageListener() {
         messagesListener = new ValueEventListener() {
             @Override
@@ -153,6 +134,20 @@ public class ChatActivity extends AppCompatActivity {
                 }
                 adapter.setMessages(messages);
                 recyclerView.scrollToPosition(adapter.getItemCount() - 1);
+
+                // Меняем заголовок в тулбаре на имя последнего отправителя (если не текущий пользователь)
+                if (!messages.isEmpty()) {
+                    ChatMessage lastMessage = messages.get(messages.size() - 1);
+                    String lastSenderId = lastMessage.senderId;
+
+                    if (!lastSenderId.equals(currentUserId)) {
+                        loadUserNameIntoToolbar(lastSenderId);
+                    } else {
+                        // Если последний отправитель — это текущий пользователь,
+                        // показываем имя собеседника (authorId)
+                        loadUserNameIntoToolbar(authorId);
+                    }
+                }
             }
 
             @Override
@@ -160,7 +155,7 @@ public class ChatActivity extends AppCompatActivity {
                 Toast.makeText(ChatActivity.this, "Ошибка загрузки: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         };
-        messagesRef.addValueEventListener(messagesListener);
+        messagesRef.orderByChild("timestamp").addValueEventListener(messagesListener);
     }
 
     private void markMessageAsRead(String messageId) {
@@ -180,6 +175,7 @@ public class ChatActivity extends AppCompatActivity {
             messagesRef.child(messageId).setValue(message);
         }
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -187,5 +183,4 @@ public class ChatActivity extends AppCompatActivity {
             messagesRef.removeEventListener(messagesListener);
         }
     }
-
 }

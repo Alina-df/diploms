@@ -16,11 +16,7 @@ import com.example.alinadiplom.ChatWithAdminActivity;
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.security.CryptoHelper;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.database.*;
 
 public class HelpFragment extends Fragment {
 
@@ -31,15 +27,18 @@ public class HelpFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_help, container, false);
 
         btnAskAdmin = view.findViewById(R.id.btnAskAdmin);
-        btnViewFAQ = view.findViewById(R.id.btnViewFAQ);
+        btnViewFAQ  = view.findViewById(R.id.btnViewFAQ);
 
         btnViewFAQ.setOnClickListener(v ->
-                NavHostFragment.findNavController(this).navigate(R.id.action_HelpFragment_to_FaqInfoFragment));
+                NavHostFragment.findNavController(this)
+                        .navigate(R.id.action_HelpFragment_to_FaqInfoFragment)
+        );
+
         btnAskAdmin.setOnClickListener(v -> openChatWithAdmin());
 
         return view;
-
     }
+
     private void openChatWithAdmin() {
         String currentUid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
@@ -49,8 +48,7 @@ public class HelpFragment extends Fragment {
         usersRef.orderByChild("role").equalTo("admin")
                 .limitToFirst(1)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
                         if (!snapshot.hasChildren()) {
                             Toast.makeText(getContext(),
                                     "Администратор не найден", Toast.LENGTH_SHORT).show();
@@ -66,23 +64,21 @@ public class HelpFragment extends Fragment {
                             if (encryptedFio != null && !encryptedFio.isEmpty()) {
                                 adminFio = CryptoHelper.decrypt(encryptedFio);
                             }
-                        } catch (Exception ignored) { }
+                        } catch (Exception ignored) { /* fallback */ }
 
+                        // Передаём и currentUserId, и authorId:
                         Intent intent = new Intent(getContext(), ChatWithAdminActivity.class);
-                        intent.putExtra("currentUserId", currentUid);
-                        intent.putExtra("adminId", adminUid);
+                        intent.putExtra("currentUserId", currentUid); // пользователь
+                        intent.putExtra("authorId", adminUid);        // админ
                         intent.putExtra("adminFio", adminFio);
                         startActivity(intent);
                     }
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
+                    @Override public void onCancelled(@NonNull DatabaseError error) {
                         Toast.makeText(getContext(),
                                 "Ошибка при поиске администратора: " + error.getMessage(),
                                 Toast.LENGTH_SHORT).show();
                     }
                 });
     }
-
-
 }

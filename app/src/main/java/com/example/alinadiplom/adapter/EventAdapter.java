@@ -21,13 +21,23 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
     private Context context;
     private List<Event> eventList;
     private OnItemClickListener onItemClickListener;
+    private OnItemLongClickListener onItemLongClickListener; // новый интерфейс
 
     public interface OnItemClickListener {
         void onItemClick(Event event);
     }
 
+    // Добавляем интерфейс для долгого нажатия
+    public interface OnItemLongClickListener {
+        void onItemLongClick(Event event, int position);
+    }
+
     public void setOnItemClickListener(OnItemClickListener listener) {
         this.onItemClickListener = listener;
+    }
+
+    public void setOnItemLongClickListener(OnItemLongClickListener listener) {
+        this.onItemLongClickListener = listener;
     }
 
     public EventAdapter(Context context, List<Event> eventList) {
@@ -48,15 +58,35 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         holder.title.setText(event.getTitle());
 
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, EventDetailsActivity.class);
-            intent.putExtra("event", event);
-            context.startActivity(intent);
+            if (onItemClickListener != null) {
+                onItemClickListener.onItemClick(event);
+            } else {
+                // Если слушатель не установлен, запускаем EventDetailsActivity по умолчанию
+                Intent intent = new Intent(context, EventDetailsActivity.class);
+                intent.putExtra("event", event);
+                context.startActivity(intent);
+            }
+        });
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (onItemLongClickListener != null) {
+                onItemLongClickListener.onItemLongClick(event, position);
+                return true; // сигнализируем, что событие обработано
+            }
+            return false;
         });
     }
 
     @Override
     public int getItemCount() {
         return eventList.size();
+    }
+
+    public void removeItem(int position) {
+        if (position >= 0 && position < eventList.size()) {
+            eventList.remove(position);
+            notifyItemRemoved(position);
+        }
     }
 
     public static class EventViewHolder extends RecyclerView.ViewHolder {

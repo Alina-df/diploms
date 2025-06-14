@@ -1,5 +1,6 @@
 package com.example.alinadiplom.ui.home;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -151,7 +152,22 @@ public class HomeFragment extends Fragment {
         ImageButton addEventBtn = root.findViewById(R.id.addEventButton);
         if (isAdmin){
             addEventBtn.setVisibility(View.VISIBLE);
+
         }
+        eventAdapter.setOnItemLongClickListener((event, position) -> {
+            if (!isAdmin)
+                return;
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Удалить событие?")
+                    .setMessage("Вы уверены, что хотите удалить событие \"" + event.getTitle() + "\"?")
+                    .setPositiveButton("Удалить", (dialog, which) -> {
+                        // TODO: удаляем событие из базы данных (например Firebase)
+                        // После успешного удаления из базы — удаляем из списка адаптера:
+                        eventAdapter.removeItem(position);
+                    })
+                    .setNegativeButton("Отмена", null)
+                    .show();
+        });
         addEventBtn.setOnClickListener(v -> {
             startActivity(new Intent(getActivity(), AddEventActivity.class));
         });

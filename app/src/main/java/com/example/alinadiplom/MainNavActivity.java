@@ -1,5 +1,6 @@
 package com.example.alinadiplom;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,6 +10,8 @@ import android.Manifest;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.example.alinadiplom.utils.LaundryNotificationService;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 import androidx.core.app.ActivityCompat;
@@ -60,6 +63,8 @@ public class MainNavActivity extends AppCompatActivity {
             requestStoragePermission();
         }
 
+        Intent serviceIntent = new Intent(this, LaundryNotificationService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
 
         BottomNavigationView navView = binding.navView;
         AppBarConfiguration appBarConfiguration = new AppBarConfiguration.Builder(

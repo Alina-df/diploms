@@ -38,5 +38,13 @@
             android:layout_height="wrap_content"
             android:text="Назначение"
             android:layout_marginBottom="20dp"/>
+        <Button
+            android:id="@+id/buttonMakeReports"
+            android:layout_width="match_parent"
+            android:background="@drawable/button_background"
+            android:textColor="@color/blue"
+            android:layout_height="wrap_content"
+            android:text="Сделать отчет"
+            android:layout_marginBottom="20dp"/>
     </LinearLayout>
 </FrameLayout>

@@ -2,6 +2,7 @@
 
 package com.example.alinadiplom.ui.dashboard;
 
+import android.app.AlertDialog;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.TextUtils;
@@ -18,6 +19,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.alinadiplom.R;
@@ -35,15 +37,16 @@ public class DashboardFragment extends Fragment {
     private LaundryManager laundryManager;
     private RoomDataManager roomDataManager;
     private FirebaseAuth mAuth;
-
+    private String currentStatus = "available";
+    private boolean isReservedByMe = false;
     private ChildEventListener notificationListener;
-
     private String myUid;
     private Spinner spinnerServiceType;
     private EditText editRoom, editProblem;
     Button buttonSendService, buttonMyRequests;
-    private TextView serviceInfo;
+    private CountDownTimer uiTimer;
     private ValueEventListener laundryListener;
+    private TextView serviceInfo;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -70,33 +73,23 @@ public class DashboardFragment extends Fragment {
             NavHostFragment.findNavController(DashboardFragment.this)
                     .navigate(R.id.action_dashboard_to_myRequests);
         });
-
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 getContext(), android.R.layout.simple_spinner_dropdown_item,
                 new String[]{"Сантехник", "Столяр", "Электрик"}
         );
+        Button buttonLaundryList = root.findViewById(R.id.buttonLaundrylist);
+        buttonLaundryList.setOnClickListener(v -> {
+            NavHostFragment.findNavController(this)
+                    .navigate(R.id.action_navigation_dashboard_to_laundryQueueFragment);
+        });
         spinnerServiceType.setAdapter(adapter);
-
         buttonSendService.setOnClickListener(v -> sendServiceRequest());
         DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("Users");
         DatabaseReference roomsRef = FirebaseDatabase.getInstance().getReference("rooms");
         roomDataManager = new RoomDataManager(usersRef, roomsRef);
         loadRoomData();
-
-        // 3. LaundryManager: управление стиральной машиной
         laundryManager = new LaundryManager(requireContext());
         attachLaundryListener();
-
-        // Обработчики кнопок прачечной
-        binding.buttonOccupy.setOnClickListener(v -> {
-            binding.editMinutes.setVisibility(View.VISIBLE);
-            binding.buttonStartWash.setVisibility(View.VISIBLE);
-            binding.buttonOccupy.setVisibility(View.GONE);
-            binding.buttonReserve.setVisibility(View.GONE);
-            binding.buttonCancelReserve.setVisibility(View.GONE);
-            binding.laundryQueueInfo.setText("");
-        });
-
         binding.buttonStartWash.setOnClickListener(v -> {
             String minutesStr = binding.editMinutes.getText().toString().trim();
             if (TextUtils.isEmpty(minutesStr)) {
@@ -114,30 +107,39 @@ public class DashboardFragment extends Fragment {
             binding.buttonStartWash.setVisibility(View.GONE);
         });
 
-        binding.buttonReserve.setOnClickListener(v ->
-                laundryManager.reserve(myUid)
-        );
+        binding.buttonReserve.setOnClickListener(v -> {
+            if (isReservedByMe) {
+                laundryManager.reserve(myUid);
+            } else {
+                String status = currentStatus;
+                if ("available".equals(status)) {
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Сколько минут стирки?")
+                            .setItems(new CharSequence[]{"2","30","45","60","90"}, (d,i) -> {
+                                int minutes = Integer.parseInt(new String[]{"2","30","45","60","90"}[i]);
+                                laundryManager.startWashing(myUid, minutes);
+                            })
+                            .show();
+                } else {
+                    // очередь
+                    laundryManager.reserve(myUid);
+                }
+            }
+        });
         binding.buttonCancelReserve.setOnClickListener(v ->
                 laundryManager.cancelReservation(myUid)
         );
-
-        // 4. Обработка отправки запроса на услугу
         binding.buttonSendService.setOnClickListener(v -> sendServiceRequest());
         DatabaseReference notiRef = FirebaseDatabase.getInstance()
                 .getReference("UserNotifications")
                 .child(myUid);
-
         notiRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
                 if (!isAdded()) return;
-
                 String title = snapshot.child("title").getValue(String.class);
                 String message = snapshot.child("message").getValue(String.class);
-
-                NotificationHelper.showLocalNotification(requireContext(), title, message);
-
-                snapshot.getRef().removeValue(); // удаляем уведомление из Firebase
+                snapshot.getRef().removeValue();
             }
 
             @Override public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {}
@@ -147,14 +149,10 @@ public class DashboardFragment extends Fragment {
         });
         return root;
     }
-
-    /** Загрузка номера комнаты и соседей из RoomDataManager */
     private Map<String, String> cachedRoommates = null;
     private String cachedRoom = null;
-
     private void loadRoomData() {
         if (cachedRoom != null && cachedRoommates != null) {
-            // Используем кэшированные данные
             binding.roomNumber.setText(cachedRoom);
             binding.roommatesContainer.removeAllViews();
             for (String name : cachedRoommates.values()) {
@@ -164,10 +162,8 @@ public class DashboardFragment extends Fragment {
                 tv.setPadding(8, 4, 8, 4);
                 binding.roommatesContainer.addView(tv);
             }
-            return; // не делаем запрос к Firebase
+            return;
         }
-
-        // Если кэша нет — загружаем из Firebase
         roomDataManager.loadUserRoom(myUid, new RoomDataManager.RoomCallback() {
             @Override
             public void onRoomLoaded(String dorm, String room) {
@@ -186,7 +182,6 @@ public class DashboardFragment extends Fragment {
                             binding.roommatesContainer.addView(tv);
                         }
                     }
-
                     @Override
                     public void onError(String errorMessage) {
                         // ...
@@ -196,83 +191,143 @@ public class DashboardFragment extends Fragment {
 
             @Override
             public void onError(String errorMessage) {
-                // ...
             }
         });
     }
-
-
-    /** Подписка на изменения в /laundry для обновления UI */
     private void attachLaundryListener() {
         laundryListener = new ValueEventListener() {
-            CountDownTimer uiTimer;
-
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String status = snapshot.child("status").getValue(String.class);
+                // 1. Сброс UI-та
+                if (uiTimer != null) { uiTimer.cancel(); uiTimer = null; }
+                binding.editMinutes.setVisibility(View.GONE);
+                binding.buttonStartWash.setVisibility(View.GONE);
+                binding.buttonReserve.setVisibility(View.GONE);
+                binding.buttonCancelReserve.setVisibility(View.GONE);
+                binding.laundryTimer.setText("");
+
+                // 2. Читаем поля
+                String status     = snapshot.child("status").getValue(String.class);
                 String occupiedBy = snapshot.child("userId").getValue(String.class);
+                Long   reservedAt = snapshot.child("reservedAt").getValue(Long.class);
+                currentStatus     = status != null ? status : "available";
+                boolean isMine    = myUid.equals(occupiedBy);
 
-                Long startTime = snapshot.child("startTime").getValue(Long.class);
-                Long duration = snapshot.child("duration").getValue(Long.class);
+                // 3. UI‑логика
+                switch (currentStatus) {
 
-                // Отменяем предыдущий UI таймер
-                if (uiTimer != null) {
-                    uiTimer.cancel();
-                    uiTimer = null;
+                    case "occupied":
+                        if (isMine) {
+                            binding.laundryStatus.setText("● Занята вами");
+                        } else {
+                            binding.laundryStatus.setText("● Занята");
+                            binding.buttonReserve.setText("Записаться в очередь");
+                            binding.buttonReserve.setVisibility(View.VISIBLE);
+                        }
+                        break;
+
+                    case "reserved":
+                        if (isMine) {
+                            binding.laundryStatus.setText("● Ваша очередь активна");
+
+                            // поле минут + кнопки «Начать» / «Отменить»
+                            binding.editMinutes.setVisibility(View.VISIBLE);
+                            binding.buttonStartWash.setVisibility(View.VISIBLE);
+                            binding.buttonCancelReserve.setVisibility(View.VISIBLE);
+
+                            // обратный отсчёт 5 минут
+                            if (reservedAt != null) {
+                                long left = reservedAt + 5*60_000 - System.currentTimeMillis();
+                                startUiTimer(left);
+                            }
+                        } else {
+                            binding.laundryStatus.setText("● Зарезервирована");
+                            binding.buttonReserve.setText("Записаться в очередь");
+                            binding.buttonReserve.setVisibility(View.VISIBLE);
+                        }
+                        break;
+
+                    case "available":
+                    default:
+                        binding.laundryStatus.setText("○ Свободна");
+                        binding.buttonReserve.setText("Занять");
+                        binding.buttonReserve.setVisibility(View.VISIBLE);
+                        break;
                 }
 
-                if (status == null || status.equals("available")) {
-                    binding.laundryStatus.setText("○ Свободна");
-                    binding.laundryTimer.setText("");
-                    // ... остальной UI
-
-                } else {
-                    if (occupiedBy != null && occupiedBy.equals(myUid)) {
-                        binding.laundryStatus.setText("● Занята вами");
-                    } else {
-                        binding.laundryStatus.setText("● Занята");
-                    }
-
-                    // Запускаем локальный CountDownTimer на UI для отображения оставшегося времени
-                    if (startTime != null && duration != null) {
-                        long now = System.currentTimeMillis();
-                        long finishTime = startTime + duration;
-                        long millisLeft = finishTime - now;
-
-                        if (millisLeft > 0) {
-                            uiTimer = new CountDownTimer(millisLeft, 1000) {
-                                @Override
-                                public void onTick(long millisUntilFinished) {
-                                    long minutes = millisUntilFinished / 60000;
-                                    long seconds = (millisUntilFinished / 1000) % 60;
-                                    binding.laundryTimer.setText(String.format("Осталось: %02d:%02d", minutes, seconds));
-                                }
-
-                                @Override
-                                public void onFinish() {
-                                    binding.laundryTimer.setText("");
-                                }
-                            }.start();
-                        } else {
-                            binding.laundryTimer.setText("");
-                        }
-                    } else {
-                        binding.laundryTimer.setText("");
-                    }
-
-                    // Остальной UI
-                    // ...
+                // 4. Таймер стирки, если уже «occupied»
+                Long startTime = snapshot.child("startTime").getValue(Long.class);
+                Long duration  = snapshot.child("duration").getValue(Long.class);
+                if ("occupied".equals(currentStatus) && startTime != null && duration != null) {
+                    long left = startTime + duration - System.currentTimeMillis();
+                    startUiTimer(left);
                 }
             }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            @Override public void onCancelled(@NonNull DatabaseError error) { }
         };
+
+        // Слушатель статуса
         laundryManager.addStatusListener(laundryListener);
+
+        /* ---------- КНОПКИ ---------- */
+
+        // Занять / Записаться
+        binding.buttonReserve.setOnClickListener(v -> {
+            if ("available".equals(currentStatus)) {
+                // сразу предлагаем время и стартуем
+                showMinutesDialogAndStart();
+            } else {
+                laundryManager.reserve(myUid);          // записываемся в очередь
+            }
+        });
+
+        // Начать стирку по брони
+        binding.buttonStartWash.setOnClickListener(v -> {
+            int mins = parseMinutes(binding.editMinutes.getText().toString());
+            if (mins <= 0) mins = 30;
+            laundryManager.startWashing(myUid, mins);
+        });
+
+        // Отменить бронь
+        binding.buttonCancelReserve.setOnClickListener(v ->
+                new AlertDialog.Builder(requireContext())
+                        .setMessage("Отменить бронь?")
+                        .setPositiveButton("Да", (d, w) -> laundryManager.cancelReservation(myUid))
+                        .setNegativeButton("Нет", null)
+                        .show());
+    }
+
+    /* ---------- ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ---------- */
+
+    private void startUiTimer(long millis) {
+        if (millis <= 0) return;
+        uiTimer = new CountDownTimer(millis, 1000) {
+            @Override public void onTick(long ms) {
+                long m = ms / 60000, s = (ms / 1000) % 60;
+                binding.laundryTimer.setText(String.format("Осталось: %02d:%02d", m, s));
+            }
+            @Override public void onFinish() { binding.laundryTimer.setText(""); }
+        }.start();
+    }
+
+    private void showMinutesDialogAndStart() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Сколько минут стирки?")
+                .setItems(new String[]{"30","45","60","90"}, (d, w) -> {
+                    int mins = Integer.parseInt(new String[]{"30","45","60","90"}[w]);
+                    laundryManager.startWashing(myUid, mins);
+                })
+                .show();
+    }
+
+    private int parseMinutes(String s) {
+        try { return Integer.parseInt(s.trim()); }
+        catch (Exception e) { return 0; }
     }
 
 
-    /** Отправка запроса на услугу в /serviceRequests */
+
     private void sendServiceRequest() {
         String problem = editProblem.getText().toString().trim();
         String type = spinnerServiceType.getSelectedItem().toString();
@@ -281,22 +336,18 @@ public class DashboardFragment extends Fragment {
             serviceInfo.setText("Пожалуйста, опишите проблему.");
             return;
         }
-
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(uid);
-
         userRef.child("room").get().addOnCompleteListener(task -> {
             if (!task.isSuccessful() || !task.getResult().exists()) {
                 serviceInfo.setText("Не удалось получить номер комнаты.");
                 return;
             }
-
             String room = task.getResult().getValue(String.class);
             if (room == null || room.isEmpty()) {
                 serviceInfo.setText("Комната не указана в профиле.");
                 return;
             }
-
             String requestId = FirebaseDatabase.getInstance().getReference()
                     .child("ServiceRequests")
                     .push()
@@ -309,7 +360,6 @@ public class DashboardFragment extends Fragment {
             requestMap.put("status", "Ожидает обработки");
             requestMap.put("timestamp", ServerValue.TIMESTAMP);
             requestMap.put("userId", uid); // Важно!
-
             FirebaseDatabase.getInstance()
                     .getReference("ServiceRequests")
                     .child(requestId)
@@ -324,25 +374,24 @@ public class DashboardFragment extends Fragment {
 
         });
     }
-
-
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         if (laundryListener != null) {
             laundryManager.removeStatusListener(laundryListener);
         }
-
-        // Удаление уведомлений
         DatabaseReference notiRef = FirebaseDatabase.getInstance()
                 .getReference("UserNotifications")
                 .child(myUid);
         if (notificationListener != null) {
             notiRef.removeEventListener(notificationListener);
         }
-
         laundryManager.cleanup();
         roomDataManager.cleanup();
+        if (uiTimer != null) {
+            uiTimer.cancel();
+            uiTimer = null;
+        }
         binding = null;
     }
 

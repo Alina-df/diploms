@@ -9,6 +9,16 @@
         android:id="@+id/textUid"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="UID пользователя"
-        android:textSize="16sp"/>
+        android:text="ФИО"
+        android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    <!-- Номер комнаты -->
+    <TextView
+        android:id="@+id/textRoom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Комната"
+        android:textSize="14sp"/>
+
 </LinearLayout>

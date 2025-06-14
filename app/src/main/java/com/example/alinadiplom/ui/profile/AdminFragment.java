@@ -35,6 +35,11 @@ public class AdminFragment extends Fragment {
             NavHostFragment.findNavController(AdminFragment.this)
                     .navigate(R.id.action_AdminFragment_to_AskedUsersListFragment);
         });
+        Button buttonMakeReports = view.findViewById(R.id.buttonMakeReports);
+        buttonMakeReports.setOnClickListener(v -> {
+            NavHostFragment.findNavController(AdminFragment.this)
+                    .navigate(R.id.action_AdminFragment_to_ReportFragment);
+        });
 
         return view;
     }

@@ -24,6 +24,9 @@
         <action
             android:id="@+id/action_dashboard_to_myRequests"
             app:destination="@id/MyRequstsFragment" />
+        <action
+            android:id="@+id/action_navigation_dashboard_to_laundryQueueFragment"
+            app:destination="@id/laundryQueueFragment" />
     </fragment>
 
     <!-- Заменяем Notifications на Profile -->
@@ -155,5 +158,18 @@
         <action
             android:id="@+id/action_AdminFragment_to_AskedUsersListFragment"
             app:destination="@id/AskedUsersListFragment" />
+        <action
+            android:id="@+id/action_AdminFragment_to_ReportFragment"
+            app:destination="@id/ReportFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/laundryQueueFragment"
+        android:name="com.example.alinadiplom.ui.dashboard.LaundryQueueFragment"
+        android:label="Очередь стиралки"
+        tools:layout="@layout/fragment_laundry_queue"/>
+    <fragment
+        android:id="@+id/ReportFragment"
+        android:name="com.example.alinadiplom.ui.profile.ReportFragment"
+        android:label="@string/title_admin_requests"
+        tools:layout="@layout/fragment_report" />
 </navigation>

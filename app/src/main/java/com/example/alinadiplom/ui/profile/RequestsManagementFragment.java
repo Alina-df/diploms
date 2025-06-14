@@ -15,6 +15,7 @@ import android.widget.Toast;
 import com.example.alinadiplom.R;
 import com.example.alinadiplom.adapter.RequestsManagementAdapter;
 import com.example.alinadiplom.model.ServiceRequest;
+import com.example.alinadiplom.utils.NotificationHelper;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -42,27 +43,32 @@ public class RequestsManagementFragment extends Fragment {
     private RecyclerView recyclerView;
     private List<ServiceRequest> requestList = new ArrayList<>();
     private RequestsManagementAdapter adapter;
+
+    private DatabaseReference requestsRef;          // <‑‑ ссылка на ветку
+    private ValueEventListener requestsListener;    // <‑‑ живой слушатель
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_requests_management, container, false);
 
+
         recyclerView = view.findViewById(R.id.recyclerViewServiceRequests);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new RequestsManagementAdapter(requestList,
+        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        adapter = new RequestsManagementAdapter(
+                requestList,
                 new RequestsManagementAdapter.OnAcceptClickListener() {
                     @Override public void onAccept(ServiceRequest r) { onAcceptClick(r); }
-                    @Override
-                    public void onReport(ServiceRequest r) { reportRequest(r); }
+                    @Override public void onReport(ServiceRequest r) { reportRequest(r); }
                 });
         recyclerView.setAdapter(adapter);
 
+        // Ссылка на базу
+        requestsRef = FirebaseDatabase.getInstance().getReference("ServiceRequests");
         loadRequests();
         return view;
     }
     private void loadRequests() {
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference("ServiceRequests");
-
         ref.orderByChild("timestamp").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -176,4 +182,39 @@ public class RequestsManagementFragment extends Fragment {
                                 Toast.LENGTH_SHORT).show()
                 );
     }
+    private void attachRealtimeListener() {
+        requestsListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snap) {
+                requestList.clear();
+                for (DataSnapshot child : snap.getChildren()) {
+                    ServiceRequest req = child.getValue(ServiceRequest.class);
+                    if (req != null) {
+                        req.setRequestId(child.getKey());
+                        requestList.add(req);
+                    }
+                }
+                // сортируем по времени (новые сверху)
+                requestList.sort((a, b) ->
+                        Long.compare(b.getTimestamp(), a.getTimestamp()));
+                adapter.notifyDataSetChanged();      // обновляем RecyclerView
+            }
+            @Override public void onCancelled(@NonNull DatabaseError err) { }
+        };
+        // слушаем любые изменения
+        requestsRef.addValueEventListener(requestsListener);
+    }
+    @Override
+    public void onStart() {
+        super.onStart();
+        attachRealtimeListener();
+    }
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (requestsRef != null && requestsListener != null) {
+            requestsRef.removeEventListener(requestsListener);   // отписываемся
+        }
+    }
+
 }

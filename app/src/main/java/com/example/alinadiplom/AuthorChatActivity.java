@@ -1,6 +1,7 @@
 package com.example.alinadiplom;
 
 import android.os.Bundle;
+import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -16,6 +17,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.alinadiplom.adapter.ChatAdapter;
 import com.example.alinadiplom.model.ChatMessage;
+import com.example.alinadiplom.security.CryptoHelper;
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -38,6 +41,15 @@ public class AuthorChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+        MaterialToolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // Включаем кнопку "назад" в тулбаре
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+            getSupportActionBar().setTitle("Чат"); // Можно позже менять динамически
+        }
 
         adId = getIntent().getStringExtra("adId");
         senderId = getIntent().getStringExtra("senderId");
@@ -55,7 +67,26 @@ public class AuthorChatActivity extends AppCompatActivity {
                 .child("messages")
                 .child(adId)
                 .child(senderId);
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("Users").child(senderId);
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String encryptedFio = snapshot.child("fio").getValue(String.class);
+                String displayName = "(неизвестно)";
+                try {
+                    displayName = CryptoHelper.decrypt(encryptedFio);
+                } catch (Exception e) {
+                    displayName = encryptedFio != null ? encryptedFio : displayName;
+                }
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(displayName);
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
         messagesRef.orderByChild("timestamp").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -96,5 +127,12 @@ public class AuthorChatActivity extends AppCompatActivity {
             messagesRef.child(messageId).setValue(message);
         }
     }
-
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == android.R.id.home) {
+            finish(); // закрываем активити
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 }

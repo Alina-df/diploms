@@ -15,10 +15,11 @@ import java.util.Map;
 
 /**
  * Логика для одной стиралки:
- * - status: available / occupied
+ * - status: available / occupied / reserved
  * - userId: UID текущего пользователя или null
  * - startTime: время начала стирки (ms) или null
  * - duration: длительность стирки в ms или null
+ * - reservedTime: когда текущий зарезервированный получил право (ms) или null
  * - /reservations: очередь { pushId: { userId, timestamp } }
  */
 public class LaundryManager {
@@ -26,6 +27,7 @@ public class LaundryManager {
     private final Context context;
     private final DatabaseReference laundryRef;
     private CountDownTimer washTimer;
+    private CountDownTimer reservedTimer;
 
     public LaundryManager(Context context) {
         this.context = context.getApplicationContext();
@@ -34,7 +36,7 @@ public class LaundryManager {
         initIfNeeded();
     }
 
-    /** Если узел /laundry пустой, задаём статус=available, userId=null */
+    /** Если узел /laundry пустой, задаём статус=available */
     private void initIfNeeded() {
         laundryRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -44,6 +46,7 @@ public class LaundryManager {
                     data.put("userId", null);
                     data.put("startTime", null);
                     data.put("duration", null);
+                    data.put("reservedTime", null);
                     laundryRef.updateChildren(data);
                 }
             }
@@ -51,37 +54,182 @@ public class LaundryManager {
         });
     }
 
-    /** Занять стиралку: status=occupied, userId=currentUserId, без таймера */
-    public void occupy(String userId) {
+    /** Запускает стирку: очищает очередь, сбрасывает reservedTimer */
+    public void startWashing(String userId, int minutes) {
         cancelWashTimer();
+        cancelReservedTimer();
+
+        long startTime = System.currentTimeMillis();
+        long durationMs = minutes * 60L * 1000L;
         Map<String, Object> data = new HashMap<>();
         data.put("status", "occupied");
         data.put("userId", userId);
-        data.put("startTime", null);
-        data.put("duration", null);
-        laundryRef.child("reservations").removeValue(); // сбросить очередь
+        data.put("startTime", startTime);
+        data.put("duration", durationMs);
+        data.put("reservedTime", null);
+        // Очистить очередь
+        laundryRef.child("reservations").removeValue();
         laundryRef.updateChildren(data)
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(context,
-                                "Стиралка занята", Toast.LENGTH_SHORT).show()
-                )
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(context,
+                            "Стирка запущена на " + minutes + " мин", Toast.LENGTH_SHORT).show();
+                    startWashTimer(durationMs);
+                    startForegroundService(startTime, durationMs);
+                })
                 .addOnFailureListener(e ->
                         Toast.makeText(context,
-                                "Ошибка: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                "Ошибка запуска стирки: " + e.getMessage(), Toast.LENGTH_SHORT).show()
                 );
     }
 
-    /**
-     * Запустить стирку с таймером.
-     * Устанавливает status, userId, startTime и duration в Firebase,
-     * и локальный CountDownTimer, по окончании которого сбрасывает статус.
-     */
-    // Метод в LaundryManager
+    /** Добавляет пользователя в очередь, если его там ещё нет */
+    public void reserve(final String userId) {
+        DatabaseReference resRef = laundryRef.child("reservations");
+        resRef.orderByChild("userId").equalTo(userId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override public void onDataChange(@NonNull DataSnapshot snap) {
+                        if (snap.exists()) {
+                            Toast.makeText(context,
+                                    "Вы уже в очереди", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        long now = System.currentTimeMillis();
+                        Map<String, Object> val = new HashMap<>();
+                        val.put("userId", userId);
+                        val.put("timestamp", now);
+                        laundryRef.child("reservations").push().setValue(val)
+                                .addOnSuccessListener(aVoid ->
+                                        Toast.makeText(context,
+                                                "Вы добавлены в очередь", Toast.LENGTH_SHORT).show()
+                                )
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(context,
+                                                "Ошибка бронирования: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+                                );
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError e) {}
+                });
+    }
+
+    /** Отменяет бронь и, если это текущий reserved, переводит очередь дальше */
+    public void cancelReservation(final String userId) {
+        cancelReservedTimer();
+        DatabaseReference resRef = laundryRef.child("reservations");
+        resRef.orderByChild("userId").equalTo(userId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override public void onDataChange(@NonNull DataSnapshot snap) {
+                        for (DataSnapshot c : snap.getChildren()) {
+                            c.getRef().removeValue();
+                        }
+                        // Проверяем, был ли это текущий reserved
+                        laundryRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override public void onDataChange(@NonNull DataSnapshot s) {
+                                String status = s.child("status").getValue(String.class);
+                                String uid    = s.child("userId").getValue(String.class);
+                                if ("reserved".equals(status) && userId.equals(uid)) {
+                                    // Этот пользователь сбросил бронь — ищем следующего
+                                    processNextReservation();
+                                }
+                            }
+                            @Override public void onCancelled(@NonNull DatabaseError e) {}
+                        });
+                        Toast.makeText(context,
+                                "Бронь отменена", Toast.LENGTH_SHORT).show();
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError error) {}
+                });
+    }
+
+    /** Обрабатывает очередь — проводит первого к reserved и даёт ему 5 минут */
+    private void processNextReservation() {
+        cancelReservedTimer();
+
+        DatabaseReference resRef = laundryRef.child("reservations");
+        resRef.orderByChild("timestamp")
+                .limitToFirst(1)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override public void onDataChange(@NonNull DataSnapshot snap) {
+                        if (!snap.exists()) {
+                            release();
+                            return;
+                        }
+                        DataSnapshot first = snap.getChildren().iterator().next();
+                        String nextUser = first.child("userId").getValue(String.class);
+                        first.getRef().removeValue();
+
+                        long now = System.currentTimeMillis();
+                        Map<String,Object> data = new HashMap<>();
+                        data.put("status", "reserved");
+                        data.put("userId", nextUser);
+                        data.put("reservedTime", now);
+                        data.put("startTime", null);
+                        data.put("duration", null);
+                        laundryRef.updateChildren(data)
+                                .addOnSuccessListener(aVoid -> startReservedTimer());
+                    }
+                    @Override public void onCancelled(@NonNull DatabaseError e) {}
+                });
+    }
+
+    /** Таймер 5 минут для зарезервированного */
+    private void startReservedTimer() {
+        cancelReservedTimer();
+        reservedTimer = new CountDownTimer(5 * 60_000L, 5 * 60_000L) {
+            @Override public void onTick(long millisUntilFinished) {}
+            @Override public void onFinish() {
+                processNextReservation();
+            }
+        }.start();
+    }
+
+    private void cancelReservedTimer() {
+        if (reservedTimer != null) {
+            reservedTimer.cancel();
+            reservedTimer = null;
+        }
+    }
+
+    /** Таймер локальный для стирки; по окончании — processNextReservation() */
+    private void startWashTimer(long durationMs) {
+        cancelWashTimer();
+        washTimer = new CountDownTimer(durationMs, 1000) {
+            @Override public void onTick(long millisUntilFinished) {}
+            @Override public void onFinish() {
+                Toast.makeText(context,
+                        "Стирка завершена", Toast.LENGTH_SHORT).show();
+                processNextReservation();
+                stopForegroundService();
+            }
+        }.start();
+    }
+
+    private void cancelWashTimer() {
+        if (washTimer != null) {
+            washTimer.cancel();
+            washTimer = null;
+        }
+    }
+
+    /** Сбрасывает всё в available и запускает очередь */
+    public void release() {
+        cancelWashTimer();
+        cancelReservedTimer();
+        stopForegroundService();
+
+        Map<String,Object> data = new HashMap<>();
+        data.put("status", "available");
+        data.put("userId", null);
+        data.put("startTime", null);
+        data.put("duration", null);
+        data.put("reservedTime", null);
+        laundryRef.updateChildren(data)
+                .addOnSuccessListener(aVoid -> processNextReservation());
+    }
+
     private void startForegroundService(long startTime, long durationMs) {
         Intent intent = new Intent(context, LaundryTimerService.class);
         intent.putExtra(LaundryTimerService.EXTRA_START_TIME, startTime);
         intent.putExtra(LaundryTimerService.EXTRA_DURATION, durationMs);
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent);
         } else {
@@ -94,124 +242,15 @@ public class LaundryManager {
         context.stopService(intent);
     }
 
-    // В startWashing вызови после обновления Firebase:
-    public void startWashing(String userId, int minutes) {
-        cancelWashTimer();
-        long startTime = System.currentTimeMillis();
-        long durationMs = minutes * 60L * 1000L;
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("status", "occupied");
-        data.put("userId", userId);
-        data.put("startTime", startTime);
-        data.put("duration", durationMs);
-        laundryRef.child("reservations").removeValue(); // сброс очереди
-        laundryRef.updateChildren(data)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(context,
-                            "Стирка запущена на " + minutes + " мин", Toast.LENGTH_SHORT).show();
-                    startForegroundService(startTime, durationMs);
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(context,
-                                "Ошибка запуска стирки: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    // В release нужно остановить сервис:
-
-
-
-    /** Локальный таймер: по окончании сбрасывает статус и уведомляет */
-    private void startWashTimer(long durationMs) {
-        washTimer = new CountDownTimer(durationMs, 1000) {
-            @Override public void onTick(long millisUntilFinished) {
-                // Здесь при желании можно обновлять прогресс в UI
-            }
-            @Override public void onFinish() {
-                release();
-                Toast.makeText(context,
-                        "Стирка завершена", Toast.LENGTH_SHORT).show();
-            }
-        }.start();
-    }
-
-    private void cancelWashTimer() {
-        if (washTimer != null) {
-            washTimer.cancel();
-            washTimer = null;
-        }
-    }
-
-    /** Сброс статуса: status → available, userId=null, startTime=null, duration=null */
-    public void release() {
-        cancelWashTimer();
-        stopForegroundService();
-
-        Map<String, Object> data = new HashMap<>();
-        data.put("status", "available");
-        data.put("userId", null);
-        data.put("startTime", null);
-        data.put("duration", null);
-        laundryRef.updateChildren(data);
-    }
-
-    /** Добавить в очередь: /reservations/{pushId} = { userId, timestamp } */
-    public void reserve(String userId) {
-        long now = System.currentTimeMillis();
-        DatabaseReference pushRef = laundryRef.child("reservations").push();
-        Map<String, Object> value = new HashMap<>();
-        value.put("userId", userId);
-        value.put("timestamp", now);
-        pushRef.setValue(value)
-                .addOnSuccessListener(aVoid ->
-                        Toast.makeText(context,
-                                "Вы добавлены в очередь", Toast.LENGTH_SHORT).show()
-                )
-                .addOnFailureListener(e ->
-                        Toast.makeText(context,
-                                "Ошибка бронирования: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                );
-    }
-
-    /** Отменить бронь: ищем записи, где userId == userId, и удаляем */
-    public void cancelReservation(String userId) {
-        laundryRef.child("reservations")
-                .orderByChild("userId")
-                .equalTo(userId)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        boolean found = false;
-                        for (DataSnapshot child : snapshot.getChildren()) {
-                            child.getRef().removeValue();
-                            found = true;
-                        }
-                        if (found) {
-                            Toast.makeText(context,
-                                    "Бронь отменена", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(context,
-                                    "Вы не в очереди", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                    @Override public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(context,
-                                "Ошибка отмены брони", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    /** Слушатель статуса и очереди: передаётся во фрагмент, чтобы обновлять UI */
     public void addStatusListener(ValueEventListener listener) {
         laundryRef.addValueEventListener(listener);
     }
-
     public void removeStatusListener(ValueEventListener listener) {
         laundryRef.removeEventListener(listener);
     }
 
-    /** Необходимо вызывать в onDestroyView(), чтобы отменить таймер */
     public void cleanup() {
         cancelWashTimer();
+        cancelReservedTimer();
     }
 }
